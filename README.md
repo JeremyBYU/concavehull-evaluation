@@ -9,7 +9,7 @@ This repository will contain all code for evaluating several concave hull algori
 * PostGIS - ST_ConcaveHull
 
 
-## Install
+## Install Instructions
 
 Only linux is officially supported for simplicity. However the code should mostly be portable. The following main dependencies are required to install.
 
@@ -25,7 +25,13 @@ Finally install all other dependencies used for analysis: `pip install -e .`
 
 
 
+## Usage
 
+### Generate Data
+
+First you need to generate the data (or download it optionally) using the following script.
+
+`concave generate-fixtures`
 
 
 

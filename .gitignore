@@ -1,6 +1,7 @@
 test_fixtures/points
 .vscode/ipch
-
+*.mp4
+*.html
 
 archive
 scratch
