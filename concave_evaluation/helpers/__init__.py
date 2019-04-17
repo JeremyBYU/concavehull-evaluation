@@ -95,5 +95,14 @@ def load_polygon(poly_fpath):
     except Exception as e:
         logger.exception("Error loading %r", poly_fpath)
         return None, None
+
+def get_point(pi, points, is_3D=False):
+    if is_3D:
+        return [points[pi, 0], points[pi, 1], points[pi, 2]]
+    else:
+        return [points[pi, 0], points[pi, 1]]
+
+def get_poly_coords(outline, points, is_3D=False):
+    return [get_point(pi, points, is_3D) for pi in outline]
             
 

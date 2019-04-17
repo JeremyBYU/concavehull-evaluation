@@ -16,6 +16,9 @@ from concave_evaluation.helpers import (round_dict, measure_concavity, PythonLit
 from concave_evaluation.test_generation.polygen import generatePolygon
 from concave_evaluation.test_generation import random_points_within, scale_poly
 
+
+from concave_evaluation.polylidar_evaluation import run_test as run_test_polylidar
+
 import pandas as pd
 import hvplot
 import hvplot.pandas
@@ -30,6 +33,17 @@ def cli():
 def generate_fixtures():
     print("Hello")
 
+
+@cli.command()
+@click.option('-i', '--input-file', type=click.Path(exists=True), default='test_fixtures/points/mi_glove_np_2000.csv')
+@click.option('-od', '--output-directory', type=click.Path(exists=True), default='assets/results/polylidar')
+@click.option('-p', '--plot', default=False, is_flag=True, required=False,
+              help="Plot polygons")
+def polylidar(input_file, output_directory, plot):
+    polygons, time_ms = run_test_polylidar(input_file)
+    print(time_ms)
+    if plot:
+        pass
 
 
 @click.option('-nv', '--number-vertices', cls=PythonLiteralOption, default="[100, 101, 1]", required=False,
@@ -114,31 +128,33 @@ def scale(input_file, output_file, max_size, plot):
     
 @cli.command()
 @click.option('-i', '--input-file', type=click.Path(exists=True), default='test_fixtures/mi_glove.geojson')
-@click.option('-pd', '--point-densities', cls=PythonLiteralOption, default="[0.1, 0.5, 1.0, 1.5, 2.0]", required=False,
-              show_default=True, help="Point Density to Generate of Polygon.")
+# @click.option('-pd', '--point-densities', cls=PythonLiteralOption, default="[0.1, 0.5, 1.0, 1.5, 2.0]", required=False,
+#               show_default=True, help="Point Density to Generate of Polygon.")
+@click.option('-np', '--number-points', cls=PythonLiteralOption, default="[2000, 10000, 20000, 30000, 40000]", required=False,
+              show_default=True, help="Number of points in polygon")           
 @click.option('-d', '--distribution', type=click.Choice(['uniform']), default='uniform')
 @click.option('-od', '--output-directory', type=click.Path(exists=True), default='test_fixtures/points')
 @click.option('-p', '--plot', default=False, is_flag=True, required=False,
               help="Plot polygons")
-def points(input_file, point_densities, distribution, output_directory, plot):
+def points(input_file, number_points, distribution, output_directory, plot):
 
     fname = Path(input_file).stem
     poly, poly_geojson = load_polygon(input_file)
     poly_area = poly.area
     records = []
-    for point_density in point_densities:
-        num_points = int(poly_area * point_density)
+    for num_points in number_points:
+        # num_points = int(poly_area * point_density)
         points = random_points_within(poly, num_points)
-        record = dict(points=points, pd=point_density, np=num_points)
+        record = dict(points=points, np=num_points)
         records.append(record)
-        fname_record = "{}_pd_{:.1f}_np_{}".format(fname, point_density, num_points)
+        fname_record = "{}_np_{}.csv".format(fname, num_points)
         fpath_record = path.join(output_directory, fname_record)
         np.savetxt(fpath_record, points)
     if plot:
         for record in records:
             points = record['points']
             df = pd.DataFrame(points, columns=["x", "y"])
-            scatter_plot = df.hvplot.scatter("x", "y", hover=False, width=500, height=500, title="PD={:.1f};NP={}".format(record['pd'], record['np']))
+            scatter_plot = df.hvplot.scatter("x", "y", hover=False, width=500, height=500, title="NP={}".format(record['np']))
             hvplot.show(scatter_plot)
             input("Enter to Continue")
 
