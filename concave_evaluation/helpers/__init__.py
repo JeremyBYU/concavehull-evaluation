@@ -1,13 +1,16 @@
 import logging
 import json
+from os import path
+from pathlib import Path
 
 import click
 import ast
 from shapely.geometry import Polygon, shape
 from descartes import PolygonPatch
 import matplotlib.pyplot as plt
+from shapely_geojson import dump, Feature
 
-logger = logging.getLogger("ConcaveEval")
+logger = logging.getLogger("Concave")
 
 BLUE = '#6699cc'
 GRAY = '#999999'
@@ -107,8 +110,26 @@ def get_point(pi, points, is_3D=False):
 def get_poly_coords(outline, points, is_3D=False):
     return [get_point(pi, points, is_3D) for pi in outline]
 
-def plot_line(ax, ob):
+def plot_line(ax, ob, index=-1):
     x, y = ob.xy
     ax.plot(x, y, color=GRAY, linewidth=3, solid_capstyle='round', zorder=1)
-            
+    if index > 0:
+        ax.text(x[0], y[0], str(index))
 
+def save_shapely(shape, fname, uid="", alg='polylidar'):
+    feature = Feature(shape, properties={'uid': uid, 'alg': alg})
+    with open(fname, "w") as f:
+        dump(feature, f, indent=2)
+
+def lines_to_polygon(list_lines, buffer_amt=0.1):
+    final_shape=list_lines[0]
+    for line in list_lines:
+        final_shape = final_shape.union(line)
+    return final_shape.buffer(buffer_amt)
+
+def modified_fname(fname, base_dir=None, suffix='.geojson'):
+    if base_dir is None:
+        base_dir = path.dirname(fname)
+    fname = Path(fname).stem
+    save_fname = path.join(base_dir, fname + suffix)
+    return save_fname

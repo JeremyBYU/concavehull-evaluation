@@ -4,7 +4,6 @@ This repository will contain all code for evaluating several concave hull algori
 
 * UMICH - Polylidar
 * CGAL - Alpha Shapes
-* Matlab - Alpha Shapes
 * Spatialite - ST_ConcaveHull
 * PostGIS - ST_ConcaveHull
 
@@ -19,10 +18,13 @@ Only linux is officially supported for simplicity. However the code should mostl
 4. CGAL 4.12 - `conda install -c conda-forge cgal`
 5. Spatialite - `conda install -c conda-forge libspatialite`
 6. Polyidar - `pip install polylidar.whl` - Install from here
-7. Matlab - No idea how anyone can afford it without a university license. Obtain at your own peril.
 
 Finally install all other dependencies used for analysis: `pip install -e .`
 
+Make instruction for cpp code.
+
+1. `export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/jeremy/miniconda/envs/concave/lib`
+2. `cd cpp/cgal && make`
 
 
 ## Usage

@@ -1,18 +1,20 @@
 import time
 import logging
-from shapely.geometry import Polygon
+from os import path
+from pathlib import Path
+from shapely.geometry import Polygon, MultiPolygon
 from polylidar import extractPolygons
 import numpy as np
-from concave_evaluation.helpers import get_poly_coords
+from concave_evaluation.helpers import get_poly_coords, save_shapely, modified_fname
 
 
-logger = logging.getLogger("ConcaveEval")
+logger = logging.getLogger("Concave")
 
 
 
 def convert_to_shapely_polygons(polygons, points, return_first=False):
     """Converts a list of C++ polygon to shapely polygon
-    If more than one polygon is returned from polylidar, selects the one with the largest shell
+    If more than one polygon is returned from polylidar, selects the one with the largest shell if return_first is True
     """
     polygons.sort(key=lambda poly: len(poly.shell), reverse=True)
     if not polygons:
@@ -36,9 +38,20 @@ def convert_to_shapely_polygons(polygons, points, return_first=False):
     if shapely_polygons and return_first:
         return shapely_polygons[0]
     
+    # Check if a multipolygon
+    if len(shapely_polygons) == 1:
+        return shapely_polygons[0]
+    elif len(shapely_polygons) > 1:
+        return MultiPolygon(shapely_polygons)
+    else:
+        # Whoa nothing inside!
+        logger.error("No polygons returned for polylidar")
+        raise ValueError("No polygons returned for polylidar")
+    
+    
     return shapely_polygons
 
-def get_polygon(points, noise=2.0, alpha=0.0, xyThresh=10.0, add_noise=False, **kwargs):
+def get_polygon(points, noise=2.0, alpha=0.0, xyThresh=0.0, add_noise=False, **kwargs):
     if add_noise:
         points = points + np.random.randn(points.shape[0], 2) * noise
     
@@ -53,11 +66,18 @@ def get_polygon(points, noise=2.0, alpha=0.0, xyThresh=10.0, add_noise=False, **
     return polygons, end
 
 
-def run_test(point_fpath, n=1, **kwargs):
+def run_test(point_fpath, save_dir="./test_fixtures/results/polylidar", n=1, alpha=0.0, xyThresh=10, **kwargs):
+    # Choose alpha parameter or xyThresh
+    if alpha > 0:
+        xyThresh = 0.0
     points = np.loadtxt(point_fpath)
     time_ms = []
     for i in range(n):
-        polygons, ms = get_polygon(points, **kwargs)
+        polygons, ms = get_polygon(points, alpha=alpha, xyThresh=xyThresh, **kwargs)
         time_ms.append(ms)
+
+    save_fname = modified_fname(point_fpath, save_dir)
+    save_shapely(polygons, save_fname, alg='polylidar')
+
     return polygons, time_ms
 

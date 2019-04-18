@@ -5,7 +5,7 @@ import pickle
 import json
 from os import path
 from pathlib import Path
-logger = logging.getLogger("ConcaveEval")
+logger = logging.getLogger("Concave")
 
 
 import matplotlib.pyplot as plt
@@ -37,11 +37,13 @@ def generate_fixtures():
 
 @cli.command()
 @click.option('-i', '--input-file', type=click.Path(exists=True), default='test_fixtures/points/mi_glove_np_2000.csv')
-@click.option('-od', '--output-directory', type=click.Path(exists=True), default='assets/results/polylidar')
+@click.option('-od', '--output-directory', type=click.Path(exists=True), default='test_fixtures/results/polylidar')
+@click.option('-xy', '--xy-thresh', default=10.0)
+@click.option('-a', '--alpha', default=0.0)
 @click.option('-p', '--plot', default=False, is_flag=True, required=False,
               help="Plot polygons")
-def polylidar(input_file, output_directory, plot):
-    polygons, time_ms = run_test_polylidar(input_file)
+def polylidar(input_file, output_directory, alpha, xy_thresh, plot):
+    polygons, time_ms = run_test_polylidar(input_file, save_dir=output_directory, alpha=alpha, xyThresh=xy_thresh)
     print(time_ms)
     if plot:
         pass

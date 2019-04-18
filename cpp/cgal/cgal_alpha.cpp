@@ -29,7 +29,7 @@ void alpha_edges( const Alpha_shape_2& A, OutputIterator out)
   for( ; it!=end; ++it)
   {
     auto classType = A.classify(*it);
-    if (classType == ClassType::REGULAR || classType == ClassType::SINGULAR)
+    if (classType == ClassType::REGULAR)
       *out++ = A.segment(*it);
   }
 }
