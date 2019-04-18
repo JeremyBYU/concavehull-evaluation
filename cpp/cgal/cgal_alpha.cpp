@@ -9,6 +9,7 @@
 #include <iostream>
 #include <list>
 #include <vector>
+#include <chrono> 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel  K;
 typedef K::FT                                                FT;
 typedef K::Point_2                                           Point;
@@ -19,43 +20,97 @@ typedef CGAL::Triangulation_data_structure_2<Vb,Fb>          Tds;
 typedef CGAL::Delaunay_triangulation_2<K,Tds>                Triangulation_2;
 typedef CGAL::Alpha_shape_2<Triangulation_2>                 Alpha_shape_2;
 typedef Alpha_shape_2::Alpha_shape_edges_iterator            Alpha_shape_edges_iterator;
+typedef Alpha_shape_2::Classification_type                   ClassType;
 template <class OutputIterator>
 void alpha_edges( const Alpha_shape_2& A, OutputIterator out)
 {
   Alpha_shape_edges_iterator it = A.alpha_shape_edges_begin(),
                              end = A.alpha_shape_edges_end();
   for( ; it!=end; ++it)
-    *out++ = A.segment(*it);
+  {
+    auto classType = A.classify(*it);
+    if (classType == ClassType::REGULAR || classType == ClassType::SINGULAR)
+      *out++ = A.segment(*it);
+  }
 }
-template <class OutputIterator>
-bool file_input(OutputIterator out)
+
+
+bool write_edges(std::string out_file, std::vector<Segment> segments)
 {
-  std::ifstream is("./data/fin", std::ios::in);
+  std::ofstream edge_file;
+  edge_file.open (out_file);
+  for (auto & seg : segments)
+  {
+    edge_file << seg << std::endl;
+  }
+  edge_file.close();
+}
+
+
+bool file_input(std::list<Point> &points, std::string file_path)
+{
+  int n = 0;
+  std::ifstream is(file_path, std::ios::in);
   if(is.fail())
   {
     std::cerr << "unable to open file for input" << std::endl;
     return false;
   }
-  int n;
-  is >> n;
+
+  std::string line;
+  while (std::getline(is, line))
+  {
+      std::istringstream iss(line);
+      double a, b;
+      if (!(iss >> a >> b)) { break; } // error
+      points.emplace_back(a, b);
+      n++;
+      // process pair (a,b)
+  }
+
   std::cout << "Reading " << n << " points from file" << std::endl;
-  CGAL::cpp11::copy_n(std::istream_iterator<Point>(is), n, out);
   return true;
 }
 // Reads a list of points and returns a list of segments
 // corresponding to the Alpha shape.
-int main()
+
+double calculate_alpha_shape(std::list<Point> &points, std::vector<Segment> &segments, double alpha=1.0)
 {
-  std::list<Point> points;
-  if(! file_input(std::back_inserter(points)))
-    return -1;
+  auto start = std::chrono::high_resolution_clock::now(); 
   Alpha_shape_2 A(points.begin(), points.end(),
-                  FT(10000),
+                  FT(alpha),
                   Alpha_shape_2::GENERAL);
-  std::vector<Segment> segments;
   alpha_edges(A, std::back_inserter(segments));
-  std::cout << "Alpha Shape computed" << std::endl;
-  std::cout << segments.size() << " alpha shape edges" << std::endl;
-  std::cout << "Optimal alpha: " << *A.find_optimal_alpha(1)<<std::endl;
+  auto end = std::chrono::high_resolution_clock::now();
+  double time_taken = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+  // std::cout << "Alpha value is " << A.get_alpha() << std::endl;
+  // time_taken *= 1e-6; 
+  // std::cout << "Time taken by program is : " << std::fixed  << time_taken << std::setprecision(2) << " msec" << std::endl; 
+
+  return time_taken;
+}
+
+int main(int argc, char* argv[])
+{
+  std::vector<std::string> argList(argv, argv + argc);
+  if (argList.size() < 4) {
+    std::cerr << "Incorrect number of arguments. Need input file, output file, and alpha" << std::endl;
+    return -1;
+  }
+  auto point_file_name = argList[1];
+  auto out_file_name = argList[2];
+  double alpha = stod(argList[3]);
+
+  
+
+  std::list<Point> points;
+  if(! file_input(points, point_file_name))
+    return -1;
+  std::vector<Segment> segments;
+  double time_ms = calculate_alpha_shape(points, segments, alpha);
+  write_edges(out_file_name, segments);
+
+  
   return 0;
 }

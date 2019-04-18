@@ -8,6 +8,8 @@ from concave_evaluation.helpers import get_poly_coords
 
 logger = logging.getLogger("ConcaveEval")
 
+
+
 def convert_to_shapely_polygons(polygons, points, return_first=False):
     """Converts a list of C++ polygon to shapely polygon
     If more than one polygon is returned from polylidar, selects the one with the largest shell

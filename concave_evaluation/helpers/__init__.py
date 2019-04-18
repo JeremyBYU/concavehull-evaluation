@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 
 logger = logging.getLogger("ConcaveEval")
 
+BLUE = '#6699cc'
+GRAY = '#999999'
 
 class PythonLiteralOption(click.Option):
 
@@ -104,5 +106,9 @@ def get_point(pi, points, is_3D=False):
 
 def get_poly_coords(outline, points, is_3D=False):
     return [get_point(pi, points, is_3D) for pi in outline]
+
+def plot_line(ax, ob):
+    x, y = ob.xy
+    ax.plot(x, y, color=GRAY, linewidth=3, solid_capstyle='round', zorder=1)
             
 
