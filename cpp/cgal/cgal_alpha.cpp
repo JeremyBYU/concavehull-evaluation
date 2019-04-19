@@ -21,6 +21,21 @@ typedef CGAL::Delaunay_triangulation_2<K,Tds>                Triangulation_2;
 typedef CGAL::Alpha_shape_2<Triangulation_2>                 Alpha_shape_2;
 typedef Alpha_shape_2::Alpha_shape_edges_iterator            Alpha_shape_edges_iterator;
 typedef Alpha_shape_2::Classification_type                   ClassType;
+
+
+template <typename TElem>
+std::ostream& operator<<(std::ostream& os, const std::vector<TElem>& vec) {
+    // typedef std::vector<TElem>::const_iterator iter_t;
+    auto iter_begin = vec.begin();
+    auto iter_end   = vec.end();
+    os << "[";
+    for (auto iter = iter_begin; iter != iter_end; ++iter) {
+        std::cout << ((iter != iter_begin) ? "," : "") << *iter;
+    }
+    os << "]";
+    return os;
+}
+
 template <class OutputIterator>
 void alpha_edges( const Alpha_shape_2& A, OutputIterator out)
 {
@@ -35,7 +50,8 @@ void alpha_edges( const Alpha_shape_2& A, OutputIterator out)
 }
 
 
-bool write_edges(std::string out_file, std::vector<Segment> segments)
+// Write all the alpha edges to a file
+void write_edges(std::string out_file, std::vector<Segment> segments)
 {
   std::ofstream edge_file;
   edge_file.open (out_file);
@@ -46,7 +62,7 @@ bool write_edges(std::string out_file, std::vector<Segment> segments)
   edge_file.close();
 }
 
-
+// Read in an input file of the point cloud
 bool file_input(std::list<Point> &points, std::string file_path)
 {
   int n = 0;
@@ -68,49 +84,64 @@ bool file_input(std::list<Point> &points, std::string file_path)
       // process pair (a,b)
   }
 
-  std::cout << "Reading " << n << " points from file" << std::endl;
+  // std::cout << "Reading " << n << " points from file" << std::endl;
   return true;
 }
 // Reads a list of points and returns a list of segments
 // corresponding to the Alpha shape.
 
-double calculate_alpha_shape(std::list<Point> &points, std::vector<Segment> &segments, double alpha=1.0)
+std::vector<double> calculate_alpha_shape(std::list<Point> &points, std::vector<Segment> &segments, double alpha=1.0, int n=1)
 {
-  auto start = std::chrono::high_resolution_clock::now(); 
+  std::vector<double> time_list;
+  // This loop repetitively calls alpha shape to time it
+  // Note that CGAL returns only an unordered set of edges (we filter so its only the boundary edges)
+  // It does not return a polygon, which is what we desire.
+  for (int i = 0; i< n; i++)
+  {
+    std::vector<Segment> segments_temp;
+    auto start = std::chrono::high_resolution_clock::now(); 
+    Alpha_shape_2 A(points.begin(), points.end(),
+                    FT(alpha),
+                    Alpha_shape_2::GENERAL);
+    alpha_edges(A, std::back_inserter(segments_temp));
+    auto end = std::chrono::high_resolution_clock::now();
+    double time_taken = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+    time_taken *= 1e-3; 
+    time_list.push_back(time_taken);
+  }
+  // Here we actually push back the alpha shape to segments vector
   Alpha_shape_2 A(points.begin(), points.end(),
                   FT(alpha),
                   Alpha_shape_2::GENERAL);
   alpha_edges(A, std::back_inserter(segments));
-  auto end = std::chrono::high_resolution_clock::now();
-  double time_taken = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
-  // std::cout << "Alpha value is " << A.get_alpha() << std::endl;
-  // time_taken *= 1e-6; 
-  // std::cout << "Time taken by program is : " << std::fixed  << time_taken << std::setprecision(2) << " msec" << std::endl; 
-
-  return time_taken;
+  return time_list;
 }
 
 int main(int argc, char* argv[])
 {
   std::vector<std::string> argList(argv, argv + argc);
   if (argList.size() < 4) {
-    std::cerr << "Incorrect number of arguments. Need input file, output file, and alpha" << std::endl;
+    std::cerr << "Incorrect number of arguments. Need input file, output file, alpha, n (optional)" << std::endl;
     return -1;
   }
   auto point_file_name = argList[1];
   auto out_file_name = argList[2];
   double alpha = stod(argList[3]);
+  int n = argList.size() == 5 ? stoi(argList[4]) : 1;
 
-  
-
+  // Read input file
   std::list<Point> points;
   if(! file_input(points, point_file_name))
     return -1;
-  std::vector<Segment> segments;
-  double time_ms = calculate_alpha_shape(points, segments, alpha);
-  write_edges(out_file_name, segments);
 
-  
+  // Get alpha shape, record unordered line segments; record time for n iterations
+  std::vector<Segment> segments;
+  auto time_list = calculate_alpha_shape(points, segments, alpha, n);
+  // Write the alpha shape to a file
+  write_edges(out_file_name, segments);
+  std::cout << time_list << std::endl;
+
   return 0;
 }

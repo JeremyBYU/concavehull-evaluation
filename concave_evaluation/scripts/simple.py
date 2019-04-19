@@ -19,6 +19,7 @@ from concave_evaluation.test_generation import random_points_within, scale_poly
 
 from concave_evaluation.polylidar_evaluation import run_test as run_test_polylidar
 from concave_evaluation.cgal_evaluation import run_test as run_test_cgal
+from concave_evaluation.spatialite_evaluation import upload_points
 
 import pandas as pd
 import hvplot
@@ -55,6 +56,13 @@ def polylidar(input_file, output_directory, alpha, xy_thresh, plot):
               help="Plot polygons")
 def cgal(input_file, output_directory, plot):
     run_test_cgal(input_file)
+
+@cli.command()
+@click.option('-i', '--input-file', type=click.Path(exists=True), default='test_fixtures/points/mi_glove_np_2000.csv')
+@click.option('-db', '--database', type=click.Path(exists=True), default='test_fixtures/db/spatialite.db')
+@click.option('-od', '--output-directory', type=click.Path(exists=True), default='test_fixtures/results/cgal')
+def spatialite(input_file, database, output_directory):
+    upload_points(input_file, database)
 
 
 @click.option('-nv', '--number-vertices', cls=PythonLiteralOption, default="[100, 101, 1]", required=False,
