@@ -121,11 +121,71 @@ def save_shapely(shape, fname, uid="", alg='polylidar'):
     with open(fname, "w") as f:
         dump(feature, f, indent=2)
 
-def lines_to_polygon(list_lines, buffer_amt=0.1):
+def extract_shell(poly, allow_multiple=False):
+    holes = list(poly.interiors)
+    print(len(holes))
+    shells = []
+    if len(holes) == 1:
+        shells.append(holes[0].coords)
+    elif allow_multiple and len(holes) < 5:
+        for hole in holes:
+            shells.append(hole.coords)
+
+    return shells
+def lines_to_polygon(list_lines, buffer_amt=0.01):
+    """Concerts a list of line strings into a polygon
+    Its importnat to note that this is __one__ way to convert the edges
+    returned by CGAL into a polygon. This method only works for a single connected region.
+    It will fail on disconnected regions
+    
+    Arguments:
+        list_lines {List[LineStrings]} -- A list of shapely line strings
+    
+    Keyword Arguments:
+        buffer_amt {float} -- How much to buffer line strings, just need a little (default: {0.01})
+    
+    Returns:
+        Polygon -- Returns a Polygon with holes
+    """
     final_shape=list_lines[0]
     for line in list_lines:
         final_shape = final_shape.union(line)
-    return final_shape.buffer(buffer_amt)
+    line_poly = final_shape.buffer(buffer_amt)
+    final_poly = line_poly
+    shell = None
+    holes = []
+    if line_poly.geom_type == 'MultiPolygon':
+        geoms = list(line_poly.geoms)
+        geoms.sort(key=lambda poly: poly.area, reverse=True)
+        outer_hull = geoms[0]
+        hull_list = extract_shell(outer_hull)
+        if hull_list:
+            shell = hull_list[0]
+        else:
+            logger.error("Could not convert line string (MultiPolygon, shell) to polygon")
+            return final_poly
+        
+        for i in range(1, len(geoms)):
+            geom = geoms[i]
+            hole_list = extract_shell(geom, allow_multiple=True)
+            if hole_list:
+                holes.extend(hole_list)
+            else:
+                logger.error("Error extracting hole from line string (MultiPolygon, holes) to polygon")
+                continue
+    elif line_poly.geom_type == 'Polygon':
+        hull_list = extract_shell(line_poly)
+        if hull_list:
+            shell = hull_list[0]
+        else:
+            logger.error("Could not convert line string (Polygon) to polygon")
+            return final_poly
+    else:
+        logger.error("Could not convert line string (UK) to polygon")
+        return final_poly
+
+    final_poly =Polygon(shell=shell, holes=holes)
+    return final_poly
 
 def modified_fname(fname, base_dir=None, suffix='.geojson'):
     if base_dir is None:
