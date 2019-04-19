@@ -8,7 +8,7 @@ from concave_evaluation.helpers import plot_line, lines_to_polygon, plot_poly_ma
 
 THIS_DIR = path.dirname(__file__)
 CGAL_BIN = path.join(THIS_DIR, '..', '..', 'cpp', 'cgal', 'bin', 'cgal_alpha')
-print(CGAL_BIN)
+
 
 def create_line_strings(result):
     num_lines = result.shape[0]
@@ -28,7 +28,7 @@ def run_test(point_fpath, save_dir="./test_fixtures/results/cgal", n=1, alpha=10
     all_lines = create_line_strings(result)
     union_lines_poly = lines_to_polygon(all_lines)
 
-    save_fname = modified_fname(point_fpath, save_dir)
+    save_fname, _ = modified_fname(point_fpath, save_dir)
     save_shapely(union_lines_poly, save_fname, alg='cgal')
 
     # plot_poly_make_fig(union_lines_poly)

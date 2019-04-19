@@ -76,7 +76,7 @@ def run_test(point_fpath, save_dir="./test_fixtures/results/polylidar", n=1, alp
         polygons, ms = get_polygon(points, alpha=alpha, xyThresh=xyThresh, **kwargs)
         time_ms.append(ms)
 
-    save_fname = modified_fname(point_fpath, save_dir)
+    save_fname, _ = modified_fname(point_fpath, save_dir)
     save_shapely(polygons, save_fname, alg='polylidar')
 
     return polygons, time_ms

@@ -276,4 +276,4 @@ def modified_fname(fname, base_dir=None, suffix='.geojson'):
         base_dir = path.dirname(fname)
     fname = Path(fname).stem
     save_fname = path.join(base_dir, fname + suffix)
-    return save_fname
+    return save_fname, fname

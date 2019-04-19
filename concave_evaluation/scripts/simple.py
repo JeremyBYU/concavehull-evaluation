@@ -19,7 +19,7 @@ from concave_evaluation.test_generation import random_points_within, scale_poly
 
 from concave_evaluation.polylidar_evaluation import run_test as run_test_polylidar
 from concave_evaluation.cgal_evaluation import run_test as run_test_cgal
-from concave_evaluation.spatialite_evaluation import upload_points
+from concave_evaluation.spatialite_evaluation import run_test as run_test_spatialite
 
 import pandas as pd
 import hvplot
@@ -38,31 +38,33 @@ def generate_fixtures():
 
 @cli.command()
 @click.option('-i', '--input-file', type=click.Path(exists=True), default='test_fixtures/points/mi_glove_np_2000.csv')
-@click.option('-od', '--output-directory', type=click.Path(exists=True), default='test_fixtures/results/polylidar')
+@click.option('-sd', '--save-directory', type=click.Path(exists=True), default='test_fixtures/results/polylidar')
 @click.option('-xy', '--xy-thresh', default=10.0)
 @click.option('-a', '--alpha', default=0.0)
 @click.option('-p', '--plot', default=False, is_flag=True, required=False,
               help="Plot polygons")
-def polylidar(input_file, output_directory, alpha, xy_thresh, plot):
-    polygons, time_ms = run_test_polylidar(input_file, save_dir=output_directory, alpha=alpha, xyThresh=xy_thresh)
+def polylidar(input_file, save_directory, alpha, xy_thresh, plot):
+    polygons, time_ms = run_test_polylidar(input_file, save_dir=save_directory, alpha=alpha, xyThresh=xy_thresh)
     print(time_ms)
     if plot:
         pass
 
+
 @cli.command()
 @click.option('-i', '--input-file', type=click.Path(exists=True), default='test_fixtures/points/mi_glove_np_2000.csv')
-@click.option('-od', '--output-directory', type=click.Path(exists=True), default='test_fixtures/results/cgal')
+@click.option('-sd', '--save-directory', type=click.Path(exists=True), default='test_fixtures/results/cgal')
 @click.option('-p', '--plot', default=False, is_flag=True, required=False,
               help="Plot polygons")
-def cgal(input_file, output_directory, plot):
+def cgal(input_file, save_directory, plot):
     run_test_cgal(input_file)
 
 @cli.command()
 @click.option('-i', '--input-file', type=click.Path(exists=True), default='test_fixtures/points/mi_glove_np_2000.csv')
+@click.option('-sd', '--save-directory', type=click.Path(exists=True), default='test_fixtures/results/spatialite')
 @click.option('-db', '--database', type=click.Path(exists=True), default='test_fixtures/db/spatialite.db')
-@click.option('-od', '--output-directory', type=click.Path(exists=True), default='test_fixtures/results/cgal')
-def spatialite(input_file, database, output_directory):
-    upload_points(input_file, database)
+@click.option('-f', '--factor', default=3.0)
+def spatialite(input_file, save_directory, database, factor):
+    run_test_spatialite(input_file, save_directory, database, factor=factor)
 
 
 @click.option('-nv', '--number-vertices', cls=PythonLiteralOption, default="[100, 101, 1]", required=False,
@@ -155,7 +157,7 @@ def scale(input_file, output_file, max_size, plot):
 @click.option('-od', '--output-directory', type=click.Path(exists=True), default='test_fixtures/points')
 @click.option('-p', '--plot', default=False, is_flag=True, required=False,
               help="Plot polygons")
-def points(input_file, number_points, distribution, output_directory, plot):
+def points(input_file, number_points, distribution, save_directory, plot):
 
     fname = Path(input_file).stem
     poly, poly_geojson = load_polygon(input_file)
@@ -167,7 +169,7 @@ def points(input_file, number_points, distribution, output_directory, plot):
         record = dict(points=points, np=num_points)
         records.append(record)
         fname_record = "{}_np_{}.csv".format(fname, num_points)
-        fpath_record = path.join(output_directory, fname_record)
+        fpath_record = path.join(save_directory, fname_record)
         np.savetxt(fpath_record, points)
     if plot:
         for record in records:
