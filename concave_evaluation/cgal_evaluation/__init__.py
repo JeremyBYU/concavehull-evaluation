@@ -32,11 +32,11 @@ def run_test(point_fpath, save_dir="./test_fixtures/results/cgal", n=1, alpha=10
     save_shapely(union_lines_poly, save_fname, alg='cgal')
 
     # plot_poly_make_fig(union_lines_poly)
-    fig = plt.figure(1, figsize=(5,5), dpi=180)
-    ax = fig.add_subplot(111)
-    for index, line in enumerate(all_lines):
-        plot_line(ax, line, index)
-    plt.show()
+    # fig = plt.figure(1, figsize=(5,5), dpi=180)
+    # ax = fig.add_subplot(111)
+    # for index, line in enumerate(all_lines):
+    #     plot_line(ax, line, index)
+    # plt.show()
 
     
 
