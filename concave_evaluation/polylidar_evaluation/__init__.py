@@ -11,7 +11,6 @@ from concave_evaluation.helpers import get_poly_coords, save_shapely, modified_f
 logger = logging.getLogger("Concave")
 
 
-
 def convert_to_shapely_polygons(polygons, points, return_first=False):
     """Converts a list of C++ polygon to shapely polygon
     If more than one polygon is returned from polylidar, selects the one with the largest shell if return_first is True
@@ -37,7 +36,7 @@ def convert_to_shapely_polygons(polygons, points, return_first=False):
     # Return only the largest polygon (the "best")
     if shapely_polygons and return_first:
         return shapely_polygons[0]
-    
+
     # Check if a multipolygon
     if len(shapely_polygons) == 1:
         return shapely_polygons[0]
@@ -47,14 +46,14 @@ def convert_to_shapely_polygons(polygons, points, return_first=False):
         # Whoa nothing inside!
         logger.error("No polygons returned for polylidar")
         raise ValueError("No polygons returned for polylidar")
-    
-    
+
     return shapely_polygons
+
 
 def get_polygon(points, noise=2.0, alpha=0.0, xyThresh=0.0, add_noise=False, **kwargs):
     if add_noise:
         points = points + np.random.randn(points.shape[0], 2) * noise
-    
+
     polylidar_kwargs = {"alpha": alpha, 'xyThresh': xyThresh}
     # Timing should start here
     t0 = time.time()
@@ -62,7 +61,8 @@ def get_polygon(points, noise=2.0, alpha=0.0, xyThresh=0.0, add_noise=False, **k
     end = (time.time() - t0) * 1000
     # Timing should end here
 
-    polygons = convert_to_shapely_polygons(polygons, points, return_first=False)
+    polygons = convert_to_shapely_polygons(
+        polygons, points, return_first=False)
     return polygons, end
 
 
@@ -73,11 +73,13 @@ def run_test(point_fpath, save_dir="./test_fixtures/results/polylidar", n=1, alp
     points = np.loadtxt(point_fpath)
     time_ms = []
     for i in range(n):
-        polygons, ms = get_polygon(points, alpha=alpha, xyThresh=xyThresh, **kwargs)
+        polygons, ms = get_polygon(
+            points, alpha=alpha, xyThresh=xyThresh, **kwargs)
         time_ms.append(ms)
 
     save_fname, _ = modified_fname(point_fpath, save_dir)
     save_shapely(polygons, save_fname, alg='polylidar')
 
-    return polygons, time_ms
+    print(time_ms)
 
+    return polygons, time_ms

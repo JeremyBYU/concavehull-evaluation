@@ -29,17 +29,13 @@ import pandas as pd
 import hvplot
 import hvplot.pandas
 
-
+# Set the random seeds
 random.seed(0)
 np.random.seed(0)
 
 @click.group()
 def cli():
     """Generates data and run benchmarks for concave algorithms"""
-
-@cli.command()
-def generate_fixtures():
-    print("Hello")
 
 
 @cli.command()
@@ -51,10 +47,7 @@ def generate_fixtures():
 @click.option('-p', '--plot', default=False, is_flag=True, required=False,
               help="Plot polygons")
 def polylidar(input_file, save_directory, alpha, xy_thresh, number_iter, plot):
-    polygons, time_ms = run_test_polylidar(input_file, save_dir=save_directory, alpha=alpha, xyThresh=xy_thresh, n=number_iter)
-    print(time_ms)
-    if plot:
-        pass
+    run_test_polylidar(input_file, save_dir=save_directory, alpha=alpha, xyThresh=xy_thresh, n=number_iter)
 
 
 @cli.command()
@@ -85,67 +78,6 @@ def spatialite(input_file, save_directory, database, factor, number_iter):
 @click.option('-n', '--number-iter', default=1)
 def postgis(input_file, save_directory, database, target_percent, number_iter):
     run_test_postgis(input_file, save_directory, database, target_percent=target_percent, n=number_iter)
-
-
-@click.option('-nv', '--number-vertices', cls=PythonLiteralOption, default="[100, 101, 1]", required=False,
-              help="Number of Vertices to generate for polygon")
-@click.option('-pr', '--polygon-radius', cls=PythonLiteralOption, default="[1000, 1001, 1]", required=False,
-              help="Number of Vertices to generate for polygon")
-@click.option('-pi', '--polygon-irregularity', cls=PythonLiteralOption, default="[0.1, 0.5, 0.1]", required=False,
-              help="Number of Vertices to generate for polygon")
-@click.option('-ps', '--polygon-spikeness', cls=PythonLiteralOption, default="[0.1, 0.5, 0.1]", required=False,
-              help="Number of Vertices to generate for polygon")
-@click.option('-p', '--plot', default=False, is_flag=True, required=False,
-              help="Plot polygons")
-@click.option('-pp', '--plot-pickle', type=click.Path(exists=True), required=False)
-@click.option('-o', '--output', type=click.Path(exists=False), default='test_fixtures/generated/polygons.pkl')
-@cli.command()
-def polygon(
-        number_vertices, polygon_radius, polygon_irregularity, polygon_spikeness, plot, plot_pickle, output):
-    print("Arguments: ", number_vertices, polygon_radius, polygon_irregularity, polygon_spikeness)
-
-    START_X = 3000
-    START_Y = 3000
-    starting_poly_list = []
-    poly_params = []
-    concavity_list = []
-    # Either generate the polygons or load them from a serialized pickle file
-    if plot_pickle:
-        starting_poly_list, poly_params, concavity_list = pickle.load(open(plot_pickle, 'rb'))
-        plot = True
-    else:
-        for nv in range(*number_vertices):
-            for pr in np.arange(*polygon_radius):
-                for pi in np.arange(*polygon_irregularity):
-                    for ps in np.arange(*polygon_spikeness):
-                        poly_param = round_dict(dict(nv=nv, pr=pr, pi=pi, ps=ps))
-                        try:
-                            poly = generatePolygon(START_X, START_Y, pr, pi, ps, nv)
-                            poly_params.append(poly_param)
-                            concavity_list.append(measure_concavity(poly))
-                            starting_poly_list.append(poly)
-                        except Exception:
-                            logger.exception("Could not generate polygon with these params: %r", poly_param)
-                        
-        pickle.dump((starting_poly_list, poly_params, concavity_list), open(output, "wb"))
-    print("Generated/Loaded {} polygons".format(len(poly_params)))
-    if plot:
-        map_bounds = get_max_bounds_polys(starting_poly_list)
-        fig = plt.figure(figsize=(5, 5))
-        ax = plt.subplot(1, 1, 1)
-
-        def update(frame):
-            poly = starting_poly_list[frame]
-            params = poly_params[frame]
-            concavity = concavity_list[frame]
-            ax.clear()
-            plot_poly(poly, ax)
-            ax.set_title("Params {} \n Concavity: {:.2f}".format(params,concavity))
-            scale_axes([map_bounds[0], map_bounds[2]], [map_bounds[1], map_bounds[3]], ax)
-            return fig,
-        anim = FuncAnimation(fig, update, frames=len(poly_params), interval=500, repeat=False)
-        anim.save("random_polygons.mp4")
-        plt.show()
 
 
 @cli.command()
@@ -218,6 +150,67 @@ def points(input_file, number_points, distribution, save_directory, plot):
             scatter_plot = df.hvplot.scatter("x", "y", hover=False, width=500, height=500, title="NP={}".format(record['np']))
             hvplot.show(scatter_plot)
             input("Enter to Continue")
+
+
+@click.option('-nv', '--number-vertices', cls=PythonLiteralOption, default="[100, 101, 1]", required=False,
+              help="Number of Vertices to generate for polygon")
+@click.option('-pr', '--polygon-radius', cls=PythonLiteralOption, default="[1000, 1001, 1]", required=False,
+              help="Number of Vertices to generate for polygon")
+@click.option('-pi', '--polygon-irregularity', cls=PythonLiteralOption, default="[0.1, 0.5, 0.1]", required=False,
+              help="Number of Vertices to generate for polygon")
+@click.option('-ps', '--polygon-spikeness', cls=PythonLiteralOption, default="[0.1, 0.5, 0.1]", required=False,
+              help="Number of Vertices to generate for polygon")
+@click.option('-p', '--plot', default=False, is_flag=True, required=False,
+              help="Plot polygons")
+@click.option('-pp', '--plot-pickle', type=click.Path(exists=True), required=False)
+@click.option('-o', '--output', type=click.Path(exists=False), default='test_fixtures/generated/polygons.pkl')
+@cli.command()
+def polygon(
+        number_vertices, polygon_radius, polygon_irregularity, polygon_spikeness, plot, plot_pickle, output):
+    print("Arguments: ", number_vertices, polygon_radius, polygon_irregularity, polygon_spikeness)
+
+    START_X = 3000
+    START_Y = 3000
+    starting_poly_list = []
+    poly_params = []
+    concavity_list = []
+    # Either generate the polygons or load them from a serialized pickle file
+    if plot_pickle:
+        starting_poly_list, poly_params, concavity_list = pickle.load(open(plot_pickle, 'rb'))
+        plot = True
+    else:
+        for nv in range(*number_vertices):
+            for pr in np.arange(*polygon_radius):
+                for pi in np.arange(*polygon_irregularity):
+                    for ps in np.arange(*polygon_spikeness):
+                        poly_param = round_dict(dict(nv=nv, pr=pr, pi=pi, ps=ps))
+                        try:
+                            poly = generatePolygon(START_X, START_Y, pr, pi, ps, nv)
+                            poly_params.append(poly_param)
+                            concavity_list.append(measure_concavity(poly))
+                            starting_poly_list.append(poly)
+                        except Exception:
+                            logger.exception("Could not generate polygon with these params: %r", poly_param)
+                        
+        pickle.dump((starting_poly_list, poly_params, concavity_list), open(output, "wb"))
+    print("Generated/Loaded {} polygons".format(len(poly_params)))
+    if plot:
+        map_bounds = get_max_bounds_polys(starting_poly_list)
+        fig = plt.figure(figsize=(5, 5))
+        ax = plt.subplot(1, 1, 1)
+
+        def update(frame):
+            poly = starting_poly_list[frame]
+            params = poly_params[frame]
+            concavity = concavity_list[frame]
+            ax.clear()
+            plot_poly(poly, ax)
+            ax.set_title("Params {} \n Concavity: {:.2f}".format(params,concavity))
+            scale_axes([map_bounds[0], map_bounds[2]], [map_bounds[1], map_bounds[3]], ax)
+            return fig,
+        anim = FuncAnimation(fig, update, frames=len(poly_params), interval=500, repeat=False)
+        anim.save("random_polygons.mp4")
+        plt.show()
 
 
 if __name__ == "__main__":
