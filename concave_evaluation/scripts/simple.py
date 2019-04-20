@@ -41,10 +41,11 @@ def generate_fixtures():
 @click.option('-sd', '--save-directory', type=click.Path(exists=True), default='test_fixtures/results/polylidar')
 @click.option('-xy', '--xy-thresh', default=10.0)
 @click.option('-a', '--alpha', default=0.0)
+@click.option('-n', '--number-iter', default=1)
 @click.option('-p', '--plot', default=False, is_flag=True, required=False,
               help="Plot polygons")
-def polylidar(input_file, save_directory, alpha, xy_thresh, plot):
-    polygons, time_ms = run_test_polylidar(input_file, save_dir=save_directory, alpha=alpha, xyThresh=xy_thresh)
+def polylidar(input_file, save_directory, alpha, xy_thresh, number_iter, plot):
+    polygons, time_ms = run_test_polylidar(input_file, save_dir=save_directory, alpha=alpha, xyThresh=xy_thresh, n=number_iter)
     print(time_ms)
     if plot:
         pass
@@ -54,18 +55,20 @@ def polylidar(input_file, save_directory, alpha, xy_thresh, plot):
 @click.option('-i', '--input-file', type=click.Path(exists=True), default='test_fixtures/points/mi_glove_np_2000.csv')
 @click.option('-sd', '--save-directory', type=click.Path(exists=True), default='test_fixtures/results/cgal')
 @click.option('-a', '--alpha', default=100.0)
+@click.option('-n', '--number-iter', default=1)
 @click.option('-p', '--plot', default=False, is_flag=True, required=False,
               help="Plot polygons")
-def cgal(input_file, save_directory, alpha, plot):
-    run_test_cgal(input_file, save_directory, alpha=alpha)
+def cgal(input_file, save_directory, alpha, number_iter, plot):
+    run_test_cgal(input_file, save_directory, alpha=alpha, n=number_iter)
 
 @cli.command()
 @click.option('-i', '--input-file', type=click.Path(exists=True), default='test_fixtures/points/mi_glove_np_2000.csv')
 @click.option('-sd', '--save-directory', type=click.Path(exists=True), default='test_fixtures/results/spatialite')
 @click.option('-db', '--database', type=click.Path(exists=True), default='test_fixtures/db/spatialite.db')
 @click.option('-f', '--factor', default=3.0)
-def spatialite(input_file, save_directory, database, factor):
-    run_test_spatialite(input_file, save_directory, database, factor=factor)
+@click.option('-n', '--number-iter', default=1)
+def spatialite(input_file, save_directory, database, factor, number_iter):
+    run_test_spatialite(input_file, save_directory, database, factor=factor, n=number_iter)
 
 
 @click.option('-nv', '--number-vertices', cls=PythonLiteralOption, default="[100, 101, 1]", required=False,

@@ -8,7 +8,7 @@ setup(
     # Project uses reStructuredText, so ensure that the docutils get
     # installed or upgraded on the target machine
     # polylidar
-    install_requires=['Click', 'numpy', 'colorama','shapely','scipy', 'matplotlib','descartes', 'pandas', 'seaborn', 'rasterio', 'sklearn', 'shapely_geojson'],
+    install_requires=['Click', 'numpy', 'colorama','shapely','scipy', 'matplotlib','descartes', 'pandas', 'seaborn', 'rasterio', 'sklearn', 'shapely_geojson', 'psycopg2'],
 
     entry_points='''
         [console_scripts]

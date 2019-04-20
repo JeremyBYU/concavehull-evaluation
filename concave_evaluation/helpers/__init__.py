@@ -176,7 +176,7 @@ def extract_and_assign(line_poly, shells, holes):
         holes {List} -- List of Lists
     
     Raises:
-        ValueError: If not other shell could be found
+        ValueError: If no shell could be found
     """
     geoms = list(line_poly.geoms)
     geoms.sort(key=lambda poly: poly.area, reverse=True)
@@ -241,10 +241,10 @@ def convert_to_geometry(shells, holes):
 
 
 def lines_to_polygon(list_lines, buffer_amt=0.01):
-    """Concerts a list of line strings into a polygon
+    """Converts a list of line strings into a polygon
     Its importnat to note that this is __one__ way to convert the edges
     returned by CGAL into a polygon. This method only works for a single connected region.
-    It will fail on disconnected regions
+    It will sometimes fail on disconnected regions
 
     Arguments:
         list_lines {List[LineStrings]} -- A list of shapely line strings
@@ -253,7 +253,7 @@ def lines_to_polygon(list_lines, buffer_amt=0.01):
         buffer_amt {float} -- How much to buffer line strings, just need a little (default: {0.01})
 
     Returns:
-        Polygon -- Returns a Polygon with holes
+        (Multi)Polygon -- Returns a Polygon with holes
     """
     final_shape = list_lines[0]
     for line in list_lines:
@@ -261,11 +261,14 @@ def lines_to_polygon(list_lines, buffer_amt=0.01):
     line_poly = final_shape.buffer(buffer_amt)
     final_poly = line_poly
     # return final_poly
-    shells = []  # This represents the outer shell of a polygon. Its a list
+
+    # This represents the outer shell of a polygon. Its a list
     # because there could be multiple polygons
-    holes = []  # This represents the holes of a polygon, Its a list of lists
+    shells = []  
+    # This represents the holes of a polygon, Its a list of lists
     # because there could be multiple holes for multiple polygons
     # The index of the outer list corresponds to the index in the shell list
+    holes = []
     if line_poly.geom_type == 'MultiPolygon':
         # We have the possibility of multiple disconnected regions and multiple holes
         extract_and_assign(line_poly, shells, holes)

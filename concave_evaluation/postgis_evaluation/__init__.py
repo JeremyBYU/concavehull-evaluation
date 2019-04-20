@@ -9,15 +9,12 @@ from shapely.wkb import dumps, loads
 from concave_evaluation.helpers import save_shapely, modified_fname
 
 INIT_TABLE = """
-SELECT DropGeoTable('concave');
+SELECT DropGeometryTable ('public','concave');
 
 CREATE TABLE concave (
-id INTEGER NOT NULL PRIMARY KEY,
-test_name TEXT);
+    ID SERIAL PRIMARY KEY, 
+    test_name TEXT, Geometry geometry(MultiPoint, 0) );
 
-SELECT AddGeometryColumn('concave', 'Geometry', -1, 'MultiPoint', 'XY');
-
-SELECT CreateSpatialIndex('concave', 'Geometry');
 """
 
 def insert_multipoint(conn, points, test_name='test'):
@@ -28,7 +25,7 @@ def insert_multipoint(conn, points, test_name='test'):
     query = """
     INSERT INTO concave
     (test_name, Geometry)
-    VALUES (?, MPointFromWKB(?, -1))
+    VALUES (?, ST_GeomFromWKB(?, -1))
     """
     conn.execute(query, (test_name, wkb))
     conn.commit()

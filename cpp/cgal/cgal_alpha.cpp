@@ -25,7 +25,6 @@ typedef Alpha_shape_2::Classification_type                   ClassType;
 
 template <typename TElem>
 std::ostream& operator<<(std::ostream& os, const std::vector<TElem>& vec) {
-    // typedef std::vector<TElem>::const_iterator iter_t;
     auto iter_begin = vec.begin();
     auto iter_end   = vec.end();
     os << "[";
@@ -84,18 +83,17 @@ bool file_input(std::list<Point> &points, std::string file_path)
       // process pair (a,b)
   }
 
-  // std::cout << "Reading " << n << " points from file" << std::endl;
   return true;
 }
+
 // Reads a list of points and returns a list of segments
 // corresponding to the Alpha shape.
-
 std::vector<double> calculate_alpha_shape(std::list<Point> &points, std::vector<Segment> &segments, double alpha=1.0, int n=1)
 {
   std::vector<double> time_list;
   // This loop repetitively calls alpha shape to time it
-  // Note that CGAL returns only an unordered set of edges (we filter so its only the boundary edges)
-  // It does not return a polygon, which is what we desire.
+  // Note that CGAL returns only an unordered set of edges (we filter for only boundary edges)
+  // It does not return a multi polygon with holes, which is what we desire.
   for (int i = 0; i< n; i++)
   {
     std::vector<Segment> segments_temp;
@@ -106,11 +104,11 @@ std::vector<double> calculate_alpha_shape(std::list<Point> &points, std::vector<
     alpha_edges(A, std::back_inserter(segments_temp));
     auto end = std::chrono::high_resolution_clock::now();
     double time_taken = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-
     time_taken *= 1e-3; 
+
     time_list.push_back(time_taken);
   }
-  // Here we actually push back the alpha shape to segments vector
+  // Here we actually push back the alpha shape to segments vector for later use
   Alpha_shape_2 A(points.begin(), points.end(),
                   FT(alpha),
                   Alpha_shape_2::GENERAL);
@@ -141,6 +139,7 @@ int main(int argc, char* argv[])
   auto time_list = calculate_alpha_shape(points, segments, alpha, n);
   // Write the alpha shape to a file
   write_edges(out_file_name, segments);
+  // Output the timings to stdout, captured by launching process
   std::cout << time_list << std::endl;
 
   return 0;
