@@ -40,7 +40,7 @@ def insert_multipoint(connection, points, test_name='test'):
 
 def extract_concave_hull(connection, test_name, n=1, target_percent=1.0):
     query = """
-    SELECT ST_ConcaveHull(Geometry, %s, true) as polygon
+    SELECT ST_ConcaveHull(Geometry, %s, false) as polygon
     FROM concave
     WHERE test_name = %s
     """

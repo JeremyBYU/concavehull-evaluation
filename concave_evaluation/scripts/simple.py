@@ -1,5 +1,5 @@
-import click
-import numpy as np
+import random
+
 import logging
 import pickle
 import json
@@ -8,13 +8,15 @@ from pathlib import Path
 logger = logging.getLogger("Concave")
 
 
+import click
+import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
 from concave_evaluation.helpers import (round_dict, measure_concavity, PythonLiteralOption, plot_poly_make_fig,
                                         get_max_bounds_polys, plot_poly, scale_axes, load_polygon)
 from concave_evaluation.test_generation.polygen import generatePolygon
-from concave_evaluation.test_generation import random_points_within, scale_poly
+from concave_evaluation.test_generation import random_points_within, scale_poly, holes_poly
 
 
 # All the algorithmic implementations for generating a concave shape from a point set
@@ -28,6 +30,8 @@ import hvplot
 import hvplot.pandas
 
 
+random.seed(0)
+np.random.seed(0)
 
 @click.group()
 def cli():
@@ -145,8 +149,8 @@ def polygon(
 
 
 @cli.command()
-@click.option('-i', '--input-file', type=click.Path(exists=True), default='test_fixtures/mi_glove_mercator.geojson')
-@click.option('-o', '--output-file', type=click.Path(exists=False), default='test_fixtures/mi_glove_normalized.geojson')
+@click.option('-i', '--input-file', type=click.Path(exists=True), default='test_fixtures/unprocessed/mi_glove_mercator.geojson')
+@click.option('-o', '--output-file', type=click.Path(exists=False), default='test_fixtures/gt_shapes/mi_glove.geojson')
 @click.option('-m', '--max-size', type=float, default=200, required=False,
               show_default=True, help="Max Size of any dimension")
 @click.option('-p', '--plot', default=False, is_flag=True, required=False,
@@ -157,7 +161,27 @@ def scale(input_file, output_file, max_size, plot):
     assert poly.is_valid
     poly_geojson['geometry'] = poly.__geo_interface__
     with open(output_file, 'w') as outfile:  
-        json.dump(poly_geojson, outfile, indent=4)
+        json.dump(poly_geojson, outfile, indent=2)
+
+    if plot:
+        plot_poly_make_fig(poly)
+
+@cli.command()
+@click.option('-i', '--input-file', type=click.Path(exists=True), default='test_fixtures/gt_shapes/mi_glove.geojson')
+@click.option('-o', '--output-file', type=click.Path(exists=False), default='test_fixtures/gt_shapes/mi_glove_holes.geojson')
+@click.option('-nh', '--number-holes', type=int, default=10, required=False,
+              show_default=True, help="Number of holes")
+@click.option('-hr', '--hole-radius', type=float, default=5.0, required=False,
+              show_default=True, help="Hole Radius")
+@click.option('-p', '--plot', default=False, is_flag=True, required=False,
+              help="Plot polygons")
+def holes(input_file, output_file, number_holes, hole_radius, plot):
+    poly, poly_geojson = load_polygon(input_file)
+    poly = holes_poly(poly, num_holes=number_holes, hole_radius=hole_radius)
+    assert poly.is_valid
+    poly_geojson['geometry'] = poly.__geo_interface__
+    with open(output_file, 'w') as outfile:  
+        json.dump(poly_geojson, outfile, indent=2)
 
     if plot:
         plot_poly_make_fig(poly)
