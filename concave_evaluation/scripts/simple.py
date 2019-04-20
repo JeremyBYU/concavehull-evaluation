@@ -53,10 +53,11 @@ def polylidar(input_file, save_directory, alpha, xy_thresh, plot):
 @cli.command()
 @click.option('-i', '--input-file', type=click.Path(exists=True), default='test_fixtures/points/mi_glove_np_2000.csv')
 @click.option('-sd', '--save-directory', type=click.Path(exists=True), default='test_fixtures/results/cgal')
+@click.option('-a', '--alpha', default=100.0)
 @click.option('-p', '--plot', default=False, is_flag=True, required=False,
               help="Plot polygons")
-def cgal(input_file, save_directory, plot):
-    run_test_cgal(input_file)
+def cgal(input_file, save_directory, alpha, plot):
+    run_test_cgal(input_file, save_directory, alpha=alpha)
 
 @cli.command()
 @click.option('-i', '--input-file', type=click.Path(exists=True), default='test_fixtures/points/mi_glove_np_2000.csv')

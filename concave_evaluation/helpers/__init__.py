@@ -139,23 +139,30 @@ def save_shapely(shape, fname, uid="", alg='polylidar'):
 
 
 def extract_shell(poly, allow_multiple=False):
-    holes = list(poly.interiors)
+    holes = [Polygon(interior) for interior in poly.interiors]
+    holes.sort(key=lambda poly: poly.area, reverse=True)
     shells = []
-    if len(holes) == 1:
-        shells.append(Polygon(holes[0]))
-    elif allow_multiple and len(holes) < 5:
+    if len(holes) == 0:
+        # print("No holes")
+        shells.append(Polygon(poly.exterior))
+    elif len(holes) == 1:
+        # print("only one hole")
+        shells.append(holes[0])
+    elif allow_multiple and len(holes) < 100:
+        # print("More than one hole")
         for hole in holes:
-            shells.append(Polygon(shell=hole))
+            shells.append(hole)
 
     return shells
 
-
+# need to handle first region better
+# use exterior if we have multiple holes
+# need to check if holes are in exterior
 def is_inside_existing_shell(shells, poly):
     for index, shell in enumerate(shells):
         if shell.intersects(poly):
             return index
-    else:
-        return -1
+    return -1
 
 
 def extract_and_assign(line_poly, shells, holes):
@@ -173,37 +180,47 @@ def extract_and_assign(line_poly, shells, holes):
     """
     geoms = list(line_poly.geoms)
     geoms.sort(key=lambda poly: poly.area, reverse=True)
-    outer_hull = geoms[0]
-    hull_list = extract_shell(outer_hull)
-    if hull_list:
-        # Create the first outer shell of a polygon
-        shells.append(hull_list[0])
-        holes.append([])
-    else:
-        logger.error(
-            "Could not convert line string (MultiPolygon, shell) to polygon")
-        raise ValueError(
-            "Could not convert line string (MultiPolygon, shell) to polygon")
+    # outer_hull = geoms[0]
+    # hull_list = [Polygon(outer_hull.exterior)]
+    # if hull_list:
+    #     # Create the first outer shell of a polygon
+    #     shells.append(hull_list[0])
+    #     holes.append([])
+    # else:
+    #     logger.error(
+    #         "Could not convert line string (MultiPolygon, shell) to polygon")
+    #     raise ValueError(
+    #         "Could not convert line string (MultiPolygon, shell) to polygon")
 
-    for i in range(1, len(geoms)):
+    for i in range(0, len(geoms)):
         # print(len(shells), len(holes))
         geom = geoms[i]
+        # print(geom.is_valid)
         possible_holes = extract_shell(geom, allow_multiple=True)
-        if possible_holes:
-            for possible_hole in possible_holes:
-                index = is_inside_existing_shell(shells, possible_hole)
-                if index >= 0:
-                    # This is a hole and exists in the shell
-                    holes[index].append(possible_hole)
-                else:
-                    # This is not a hole in any existing shell!
-                    # Create a new shell and an empty list of holes for it
-                    shells.append(possible_hole)
-                    holes.append([])
-        else:
-            logger.error(
-                "Error extracting hole from line string (MultiPolygon, holes) to polygon")
-            continue
+        outer_shell = Polygon(geom.exterior)
+        # print(i)
+        if is_inside_existing_shell(shells, outer_shell) == -1:
+            # print("New region to add, using outer exterior shell")
+            shells.append(outer_shell)
+            holes.append([])
+            possible_holes.pop(0)
+            # break
+
+
+        for possible_hole in possible_holes:
+            index = is_inside_existing_shell(shells, possible_hole)
+            if index >= 0:
+                # This is a hole and exists in the shell
+                holes[index].append(possible_hole)
+            else:
+                # This is not a hole in any existing shell!
+                # Create a new shell and an empty list of holes for it
+                shells.append(possible_hole)
+                holes.append([])
+        # else:
+        #     logger.error(
+        #         "Error extracting hole from line string (MultiPolygon, holes) to polygon")
+        #     continue
 
 def convert_to_geometry(shells, holes):
     polygons = []
@@ -243,6 +260,7 @@ def lines_to_polygon(list_lines, buffer_amt=0.01):
         final_shape = final_shape.union(line)
     line_poly = final_shape.buffer(buffer_amt)
     final_poly = line_poly
+    # return final_poly
     shells = []  # This represents the outer shell of a polygon. Its a list
     # because there could be multiple polygons
     holes = []  # This represents the holes of a polygon, Its a list of lists
