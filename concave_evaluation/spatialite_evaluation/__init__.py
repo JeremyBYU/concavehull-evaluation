@@ -58,10 +58,10 @@ class DBConn(object):
         """ Sets up Database connection and loads in the spatialite extension """
         self.conn = sqlite3.connect(db_path, check_same_thread=False)
         self.conn.enable_load_extension(True)
-        # Initialize if this is a new database
-        if not path.exists(db_path):
-            self.conn.execute("SELECT InitSpatialMetaData(1);")
         self.conn.execute('SELECT load_extension("mod_spatialite");')
+        # Initialize if this is a new database
+        if db_path == ':memory:' or not path.exists(db_path):
+            self.conn.execute("SELECT InitSpatialMetaData(1);")
         self.conn.executescript(INIT_TABLE)
         self.conn.row_factory = sqlite3.Row if use_row else dict_factory
         self.cursor = self.conn.cursor()

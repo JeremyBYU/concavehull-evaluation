@@ -12,7 +12,7 @@ setup(
 
     entry_points='''
         [console_scripts]
-        concave=concave_evaluation.scripts.simple:cli
+        concave=concave_evaluation.scripts.cli:cli
     ''',
 
     # package_data={
