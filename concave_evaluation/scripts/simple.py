@@ -17,9 +17,11 @@ from concave_evaluation.test_generation.polygen import generatePolygon
 from concave_evaluation.test_generation import random_points_within, scale_poly
 
 
+# All the algorithmic implementations for generating a concave shape from a point set
 from concave_evaluation.polylidar_evaluation import run_test as run_test_polylidar
 from concave_evaluation.cgal_evaluation import run_test as run_test_cgal
 from concave_evaluation.spatialite_evaluation import run_test as run_test_spatialite
+from concave_evaluation.postgis_evaluation import run_test as run_test_postgis, DEFAULT_PG_CONN
 
 import pandas as pd
 import hvplot
@@ -69,6 +71,16 @@ def cgal(input_file, save_directory, alpha, number_iter, plot):
 @click.option('-n', '--number-iter', default=1)
 def spatialite(input_file, save_directory, database, factor, number_iter):
     run_test_spatialite(input_file, save_directory, database, factor=factor, n=number_iter)
+
+
+@cli.command()
+@click.option('-i', '--input-file', type=click.Path(exists=True), default='test_fixtures/points/mi_glove_np_2000.csv')
+@click.option('-sd', '--save-directory', type=click.Path(exists=True), default='test_fixtures/results/postgis')
+@click.option('-db', '--database', default=DEFAULT_PG_CONN)
+@click.option('-tp', '--target-percent', default=0.99)
+@click.option('-n', '--number-iter', default=1)
+def postgis(input_file, save_directory, database, target_percent, number_iter):
+    run_test_postgis(input_file, save_directory, database, target_percent=target_percent, n=number_iter)
 
 
 @click.option('-nv', '--number-vertices', cls=PythonLiteralOption, default="[100, 101, 1]", required=False,

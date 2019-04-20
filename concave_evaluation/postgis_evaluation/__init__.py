@@ -2,11 +2,16 @@
 import time
 from os import path
 import sqlite3
+
 import numpy as np
 from shapely.geometry import asMultiPoint, asPoint
 from shapely.wkb import dumps, loads
+import psycopg2
+import psycopg2.extras
 
 from concave_evaluation.helpers import save_shapely, modified_fname
+
+DEFAULT_PG_CONN = "dbname=concave user=concave password=concave host=localhost"
 
 INIT_TABLE = """
 SELECT DropGeometryTable ('public','concave');
@@ -17,7 +22,7 @@ CREATE TABLE concave (
 
 """
 
-def insert_multipoint(conn, points, test_name='test'):
+def insert_multipoint(connection, points, test_name='test'):
     multipoint = asMultiPoint(points)
 
     wkb = multipoint.wkb
@@ -25,54 +30,62 @@ def insert_multipoint(conn, points, test_name='test'):
     query = """
     INSERT INTO concave
     (test_name, Geometry)
-    VALUES (?, ST_GeomFromWKB(?, -1))
+    VALUES (%s, ST_GeomFromWKB(%s, -1))
     """
-    conn.execute(query, (test_name, wkb))
-    conn.commit()
+    with connection.cursor() as cursor:
+        cursor.execute(query, (test_name, wkb))
+
+    connection.commit()
 
 
-def extract_concave_hull(conn, test_name, n=1, factor=1.0):
+def extract_concave_hull(connection, test_name, n=1, target_percent=1.0):
     query = """
-    SELECT ST_AsBinary(ST_ConcaveHull(Geometry, ?, 1)) as polygon
+    SELECT ST_ConcaveHull(Geometry, %s, true) as polygon
     FROM concave
-    WHERE test_name == ?
+    WHERE test_name = %s
     """
     # Start Timing here
     timings = []
-    for i in range(n):
-        t0 = time.time()
-        cursor = conn.execute(query, (factor, test_name))
-        result = cursor.fetchone()
-        t1 = time.time()
-        time_ms = (t1 - t0) * 1000
-        timings.append(time_ms)
-    polygon = loads(result['polygon'])
+    with connection.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
+        for i in range(n):
+            t0 = time.time()
+            cursor.execute(query, (target_percent, test_name))
+            result = cursor.fetchone()
+            t1 = time.time()
+            time_ms = (t1 - t0) * 1000
+            timings.append(time_ms)
+    # load the actual polygon into a shapely geometry, not timed
+    final_geometry = loads(result['polygon'], hex=True)
+    # This may not be a polygon, filter out
+    if final_geometry.geom_type == 'GeometryCollection':
+        # PostGIS returned points as well as Polygons! Just get the polygons
+        polygons = [geom for geom in final_geometry.geoms if geom.geom_type in ['Polygon', 'MultiPolygon']]
+        final_geometry = polygons[0]
+        if len(polygons) > 1:
+            final_geometry = MultiPolygon(polygons)
+    
 
-    return polygon, timings
+    return final_geometry, timings
 
-class DBConn(object):
-    def __init__(self, db_path, use_row=True):
-        """ Sets up Database connection and loads in the spatialite extension """
-        self.conn = sqlite3.connect(db_path, check_same_thread=False)
-        self.conn.enable_load_extension(True)
-        # Initialize if this is a new database
-        if not path.exists(db_path):
-            self.conn.execute("SELECT InitSpatialMetaData(1);")
-        self.conn.execute('SELECT load_extension("mod_spatialite");')
-        self.conn.executescript(INIT_TABLE)
-        self.conn.row_factory = sqlite3.Row if use_row else dict_factory
+class DBConnPostGIS(object):
+    def __init__(self, db_path=DEFAULT_PG_CONN):
+        """ Sets up Database connection to postgis"""
+        self.conn = psycopg2.connect(db_path)
+
         self.cursor = self.conn.cursor()
+        self.cursor.execute(INIT_TABLE)
 
 
-def run_test(point_fpath, save_dir="./test_fixtures/results/spatialite", db_path="./test_fixtures/db/spatialite.db", n=1, factor=1.0, **kwargs):
+def run_test(point_fpath, save_dir="./test_fixtures/results/postgis", db_path=DEFAULT_PG_CONN, n=1, target_percent=0.99, **kwargs):
     points = np.loadtxt(point_fpath)
-    db = DBConn(db_path, use_row=True)
+    db = DBConnPostGIS(db_path)
 
     save_fname, test_name = modified_fname(point_fpath, save_dir)
     insert_multipoint(db.conn, points, test_name=test_name)
-    polygon, timings = extract_concave_hull(db.conn, test_name, factor=factor, n=n)
 
-    save_shapely(polygon, save_fname, alg='spatialite')
+    polygon, timings = extract_concave_hull(db.conn, test_name, target_percent=target_percent, n=n)
+
+    save_shapely(polygon, save_fname, alg='postgis')
     print(timings)
     return polygon, timings
 
