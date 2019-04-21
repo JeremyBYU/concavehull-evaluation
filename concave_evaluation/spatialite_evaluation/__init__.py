@@ -7,7 +7,7 @@ from shapely.geometry import asMultiPoint, asPoint
 from shapely.wkb import dumps, loads
 
 from concave_evaluation.helpers import save_shapely, modified_fname
-
+from concave_evaluation import (DEFAULT_SPATIALITE_DB, DEFAULT_TEST_FILE)
 INIT_TABLE = """
 SELECT DropGeoTable('concave');
 
@@ -19,6 +19,7 @@ SELECT AddGeometryColumn('concave', 'Geometry', -1, 'MultiPoint', 'XY');
 
 SELECT CreateSpatialIndex('concave', 'Geometry');
 """
+
 
 def insert_multipoint(conn, points, test_name='test'):
     multipoint = asMultiPoint(points)
@@ -53,6 +54,7 @@ def extract_concave_hull(conn, test_name, n=1, factor=1.0):
 
     return polygon, timings
 
+
 class DBConn(object):
     def __init__(self, db_path, use_row=True):
         """ Sets up Database connection and loads in the spatialite extension """
@@ -67,19 +69,17 @@ class DBConn(object):
         self.cursor = self.conn.cursor()
 
 
-def run_test(point_fpath, save_dir="./test_fixtures/results/spatialite", db_path="./test_fixtures/db/spatialite.db", n=1, factor=1.0, **kwargs):
+def run_test(point_fpath, save_dir=DEFAULT_TEST_FILE, db_path=DEFAULT_SPATIALITE_DB, n=1,
+             factor=3.0, save_poly=True, **kwargs):
     points = np.loadtxt(point_fpath)
     db = DBConn(db_path, use_row=True)
 
     save_fname, test_name = modified_fname(point_fpath, save_dir)
     insert_multipoint(db.conn, points, test_name=test_name)
-    polygon, timings = extract_concave_hull(db.conn, test_name, factor=factor, n=n)
+    polygon, timings = extract_concave_hull(
+        db.conn, test_name, factor=factor, n=n)
 
-    save_shapely(polygon, save_fname, alg='spatialite')
+    if save_poly:
+        save_shapely(polygon, save_fname, alg='spatialite')
     print(timings)
     return polygon, timings
-
-
-
-
-    

@@ -11,8 +11,7 @@ import psycopg2
 import psycopg2.extras
 
 from concave_evaluation.helpers import save_shapely, modified_fname
-
-DEFAULT_PG_CONN = "dbname=concave user=concave password=concave host=localhost"
+from concave_evaluation import (DEFAULT_TEST_FILE, DEFAULT_PG_SAVE_DIR, DEFAULT_PG_CONN)
 
 INIT_TABLE = """
 SELECT DropGeometryTable ('public','concave');
@@ -22,6 +21,7 @@ CREATE TABLE concave (
     test_name TEXT, Geometry geometry(MultiPoint, 0) );
 
 """
+
 
 def insert_multipoint(connection, points, test_name='test'):
     multipoint = asMultiPoint(points)
@@ -63,13 +63,14 @@ def extract_concave_hull(connection, test_name, n=1, target_percent=1.0):
     # This may not be a polygon, filter out
     if final_geometry.geom_type == 'GeometryCollection':
         # PostGIS returned points as well as Polygons! Just get the polygons
-        polygons = [geom for geom in final_geometry.geoms if geom.geom_type in ['Polygon', 'MultiPolygon']]
+        polygons = [geom for geom in final_geometry.geoms if geom.geom_type in [
+            'Polygon', 'MultiPolygon']]
         final_geometry = polygons[0]
         if len(polygons) > 1:
             final_geometry = MultiPolygon(polygons)
-    
 
     return final_geometry, timings
+
 
 class DBConnPostGIS(object):
     def __init__(self, db_path=DEFAULT_PG_CONN):
@@ -80,20 +81,17 @@ class DBConnPostGIS(object):
         self.cursor.execute(INIT_TABLE)
 
 
-def run_test(point_fpath, save_dir="./test_fixtures/results/postgis", db_path=DEFAULT_PG_CONN, n=1, target_percent=0.99, **kwargs):
+def run_test(point_fpath, save_dir=DEFAULT_PG_SAVE_DIR, db_path=DEFAULT_PG_CONN, n=1,
+             target_percent=0.90, save_poly=True, **kwargs):
     points = np.loadtxt(point_fpath)
     db = DBConnPostGIS(db_path)
 
     save_fname, test_name = modified_fname(point_fpath, save_dir)
     insert_multipoint(db.conn, points, test_name=test_name)
 
-    polygon, timings = extract_concave_hull(db.conn, test_name, target_percent=target_percent, n=n)
-
-    save_shapely(polygon, save_fname, alg='postgis')
+    polygon, timings = extract_concave_hull(
+        db.conn, test_name, target_percent=target_percent, n=n)
+    if save_poly:
+        save_shapely(polygon, save_fname, alg='postgis')
     print(timings)
     return polygon, timings
-
-
-
-
-    

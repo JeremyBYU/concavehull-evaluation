@@ -6,14 +6,15 @@ from shapely.geometry import Polygon, MultiPolygon
 from polylidar import extractPolygons
 import numpy as np
 from concave_evaluation.helpers import get_poly_coords, save_shapely, modified_fname
-
+from concave_evaluation import DEFAULT_PL_SAVE_DIR
 
 logger = logging.getLogger("Concave")
 
 
 def convert_to_shapely_polygons(polygons, points, return_first=False):
     """Converts a list of C++ polygon to shapely polygon
-    If more than one polygon is returned from polylidar, selects the one with the largest shell if return_first is True
+    If more than one polygon is returned turn into a MultiPolygon
+    unless return_first is set
     """
     polygons.sort(key=lambda poly: len(poly.shell), reverse=True)
     if not polygons:
@@ -68,7 +69,7 @@ def get_polygon(points, noise=2.0, alpha=0.0, xyThresh=0.0, add_noise=False, **k
     return polygons, end
 
 
-def run_test(point_fpath, save_dir="./test_fixtures/results/polylidar", n=1, alpha=0.0, xyThresh=10, **kwargs):
+def run_test(point_fpath, save_dir=DEFAULT_PL_SAVE_DIR, n=1, alpha=0.0, xyThresh=10, save_poly=True, **kwargs):
     # Choose alpha parameter or xyThresh
     if alpha > 0:
         xyThresh = 0.0
@@ -80,7 +81,8 @@ def run_test(point_fpath, save_dir="./test_fixtures/results/polylidar", n=1, alp
         time_ms.append(ms)
 
     save_fname, _ = modified_fname(point_fpath, save_dir)
-    save_shapely(polygons, save_fname, alg='polylidar')
+    if save_poly:
+        save_shapely(polygons, save_fname, alg='polylidar')
 
     print(time_ms)
 

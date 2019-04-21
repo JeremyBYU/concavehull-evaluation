@@ -9,9 +9,7 @@ import matplotlib.pyplot as plt
 logger = logging.getLogger("Concave")
 
 from concave_evaluation.helpers import plot_line, lines_to_polygon, plot_poly_make_fig, save_shapely, modified_fname
-
-THIS_DIR = path.dirname(__file__)
-CGAL_BIN = path.abspath(path.join(THIS_DIR, '..', '..', 'cpp', 'cgal', 'bin', 'cgal_alpha'))
+from concave_evaluation import DEFAULT_CGAL_SAVE_DIR, CGAL_BIN
 
 
 def create_line_strings(result):
@@ -40,7 +38,7 @@ def launch_cgal(point_fpath, edge_fpath, alpha=10, n=1):
         logger.exception("Error launching cgal with args %r", args)
     return timings
 
-def run_test(point_fpath, save_dir="./test_fixtures/results/cgal", n=1, alpha=10, **kwargs):
+def run_test(point_fpath, save_dir=DEFAULT_CGAL_SAVE_DIR, n=1, alpha=10, save_poly=True, **kwargs):
 
     save_fname, test_name = modified_fname(point_fpath, save_dir)
     edge_fpath = path.join(save_dir, 'output.csv')
@@ -55,7 +53,8 @@ def run_test(point_fpath, save_dir="./test_fixtures/results/cgal", n=1, alpha=10
     # with Polylidar and its polygon creation algorithm.
     all_lines = create_line_strings(edges)
     union_lines_poly = lines_to_polygon(all_lines)
-    save_shapely(union_lines_poly, save_fname, alg='cgal')
+    if save_poly:
+        save_shapely(union_lines_poly, save_fname, alg='cgal')
 
     # fig = plt.figure(1, figsize=(5,5), dpi=180)
     # ax = fig.add_subplot(111)
@@ -64,8 +63,8 @@ def run_test(point_fpath, save_dir="./test_fixtures/results/cgal", n=1, alpha=10
     # plt.show()
 
 
-
     print(timings)
+    return union_lines_poly, timings
 
     
 
