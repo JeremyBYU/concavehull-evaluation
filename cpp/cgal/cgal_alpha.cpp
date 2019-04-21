@@ -137,7 +137,7 @@ int main(int argc, char* argv[])
   // Get alpha shape, record unordered line segments; record time for n iterations
   std::vector<Segment> segments;
   auto time_list = calculate_alpha_shape(points, segments, alpha, n);
-  // Write the alpha shape to a file
+  // Write the alpha shape edges to a file
   write_edges(out_file_name, segments);
   // Output the timings to stdout, captured by launching process
   std::cout << time_list << std::endl;

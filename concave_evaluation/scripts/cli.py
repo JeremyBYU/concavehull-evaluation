@@ -26,7 +26,7 @@ from concave_evaluation.helpers import (round_dict, measure_concavity, PythonLit
                                         get_max_bounds_polys, plot_poly, scale_axes, load_polygon)
 from concave_evaluation.test_generation.polygen import generatePolygon
 from concave_evaluation.test_generation import random_points_within, scale_poly, holes_poly
-from concave_evaluation.scripts.testrunner import polylidar, cgal, spatialite, postgis
+from concave_evaluation.scripts.testrunner import evaluate
 
 logger = logging.getLogger("Concave")
 
@@ -38,12 +38,10 @@ np.random.seed(0)
 @click.group()
 def cli():
     """Generates data and run benchmarks for concave algorithms"""
+    pass
 
 # Add test runner commands for each concave hull implementation
-cli.add_command(polylidar)
-cli.add_command(cgal)
-cli.add_command(spatialite)
-cli.add_command(postgis)
+cli.add_command(evaluate)
 
 
 @cli.command()

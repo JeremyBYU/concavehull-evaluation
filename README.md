@@ -43,11 +43,47 @@ Instructions for option 2 are the following:
 
 ## Usage
 
+You have a nice CLI that you can use to launch the benchmarking and test dataset creation process.  See commands here:
+
+```
+concave --help
+concave evaluate --help
+```
+
 ### Generate Data
 
 First you need to generate the data (or download it optionally) using the following script.
 
+
 `concave generate-fixtures`
+
+
+### Note on Timings
+
+**PostGIS**
+
+We upload the data to the database server before we begin timing. Once data is uploaded we execute the ST_ConcaveHull query through a python `psycopg` client. The timing technically includes the following:
+1. Time to transmit SQL text command to server (measured to be less than 1 ms (local))
+2. Time to parse text command and execute algorithm.
+3. Time to send back raw binary polygon data (WKB) to client. Note the polygon is much smaller than the point clouds (1-10).
+
+We can also time using `psql` using this command - `psql --host=localhost -U concave -c '\timing' -c 'SELECT ST_ConcaveHull(Geometry, .90, false) as polygon FROM concave'`.
+This timing was found to be roughly equivalent to the python command (actually a little slower for some reason..)
+
+**Spatialite**
+
+We use an in memory SQLite database and load the C spatialite module. We do not time the uploading of the point cloud data.  We only time the execution of the 
+ST_ConcaveHull algorithm.  SQLite is actually a library that is part of the program being executed, there is no client/sever transfer costs like PostGIS experiences (though minimal).
+
+**CGAL**
+
+Timing begins when then alpha shape is constructed and all UNORDERED boundary edges are extracted. Note that CGAL does not output a proper polygon as the other implementations provide.
+Therefore CGAL has an advantage in the sense it still has not "finished" the problem yet. 
+
+However do note that CGAL actually does some work that Polylidar and all the others don't. Fore every edge it makes a note of the alpha shape interval for the edge. This allows a **family** of alpha shapes
+to be rapidly constructed.  This is a really neat feature if you want to rapidly see a suite of different levels of concavity of a point cloud. However if you just want one answer for one alpha value, this is excess work.
+
+
 
 
 

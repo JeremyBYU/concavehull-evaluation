@@ -2,6 +2,7 @@
 import time
 from os import path
 import sqlite3
+import sys
 
 import numpy as np
 from shapely.geometry import asMultiPoint, asPoint
@@ -35,6 +36,8 @@ def insert_multipoint(connection, points, test_name='test'):
     with connection.cursor() as cursor:
         cursor.execute(query, (test_name, wkb))
 
+    print("Size of WKB:", sys.getsizeof(wkb))
+
     connection.commit()
 
 
@@ -55,6 +58,7 @@ def extract_concave_hull(connection, test_name, n=1, target_percent=1.0):
             time_ms = (t1 - t0) * 1000
             timings.append(time_ms)
     # load the actual polygon into a shapely geometry, not timed
+    print("Size of Polygon:", sys.getsizeof(result['polygon']))
     final_geometry = loads(result['polygon'], hex=True)
     # This may not be a polygon, filter out
     if final_geometry.geom_type == 'GeometryCollection':
