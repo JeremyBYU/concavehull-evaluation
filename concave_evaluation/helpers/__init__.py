@@ -165,7 +165,7 @@ def is_inside_existing_shell(shells, poly):
     return -1
 
 
-def extract_and_assign(line_poly, shells, holes):
+def extract_and_assign(geoms, shells, holes):
     """Extracts shells and holes from from lines strings that have been buffered and unioned
     Sorts the polygons by area size first, the largest polygon is guaranteed to be an outer shell
     Then loop through all the other polygons and check if they are in inside the shell just extracted
@@ -178,7 +178,7 @@ def extract_and_assign(line_poly, shells, holes):
     Raises:
         ValueError: If no shell could be found
     """
-    geoms = list(line_poly.geoms)
+    # geoms = list(line_poly.geoms)
     geoms.sort(key=lambda poly: poly.area, reverse=True)
     # outer_hull = geoms[0]
     # hull_list = [Polygon(outer_hull.exterior)]
@@ -271,17 +271,18 @@ def lines_to_polygon(list_lines, buffer_amt=0.01):
     holes = []
     if line_poly.geom_type == 'MultiPolygon':
         # We have the possibility of multiple disconnected regions and multiple holes
-        extract_and_assign(line_poly, shells, holes)
+        extract_and_assign(list(line_poly.geoms), shells, holes)
 
     elif line_poly.geom_type == 'Polygon':
         # Super simple, the lines created just a single connected region, no holes
-        hull_list = extract_shell(line_poly)
-        if hull_list:
-            shells.append(hull_list[0])
-            holes.append([])
-        else:
-            logger.error("Could not convert line string (Polygon) to polygon")
-            return final_poly
+        extract_and_assign([line_poly], shells, holes)
+        # hull_list = extract_shell(line_poly)
+        # if hull_list:
+        #     shells.append(hull_list[0])
+        #     holes.append([])
+        # else:
+        #     logger.error("Could not convert line string (Polygon) to polygon")
+        #     return final_poly
     else:
         # This is a different geometry that this alg can handle
         # Just return whatever the shapely union produced

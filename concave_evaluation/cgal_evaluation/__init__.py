@@ -54,6 +54,8 @@ def run_test(point_fpath, save_dir=DEFAULT_CGAL_SAVE_DIR, n=1, alpha=10, save_po
     all_lines = create_line_strings(edges)
     union_lines_poly = lines_to_polygon(all_lines)
     if save_poly:
+        if (not union_lines_poly.is_valid):
+            logger.error("CGAL polygon not valid %r", point_fpath)
         save_shapely(union_lines_poly, save_fname, alg='cgal')
 
     # fig = plt.figure(1, figsize=(5,5), dpi=180)
