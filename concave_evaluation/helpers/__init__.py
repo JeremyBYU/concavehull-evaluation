@@ -94,7 +94,11 @@ def plot_poly_make_fig(poly):
     fig = plt.figure(figsize=(5, 5))
     ax = plt.subplot(1, 1, 1)
     map_bounds = poly.bounds
-    plot_poly(poly, ax)
+    geoms = [poly]
+    if poly.geom_type == 'MultiPolygon':
+        geoms = list(poly.geoms)
+    for geom in geoms:
+        plot_poly(geom, ax, plot_holes=True)
     scale_axes([map_bounds[0], map_bounds[2]], [
                map_bounds[1], map_bounds[3]], ax)
     plt.show()

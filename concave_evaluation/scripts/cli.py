@@ -26,7 +26,7 @@ from concave_evaluation import DEFAULT_SHAPE_FILE
 from concave_evaluation.helpers import (round_dict, measure_concavity, PythonLiteralOption, plot_poly_make_fig,
                                         get_max_bounds_polys, plot_poly, scale_axes, load_polygon)
 from concave_evaluation.test_generation.polygen import generatePolygon
-from concave_evaluation.test_generation import random_points_within, scale_poly, holes_poly
+from concave_evaluation.test_generation import random_points_within_mp, scale_poly, holes_poly
 from concave_evaluation.scripts.testrunner import evaluate
 
 logger = logging.getLogger("Concave")
@@ -106,7 +106,7 @@ def points(input_file, number_points, distribution, save_directory, plot):
     records = []
     for num_points in number_points:
         # num_points = int(poly_area * point_density)
-        points = random_points_within(poly, num_points)
+        points = random_points_within_mp(poly, num_points, processes=4)
         record = dict(points=points, np=num_points)
         records.append(record)
         fname_record = "{}_{}.csv".format(fname, num_points)

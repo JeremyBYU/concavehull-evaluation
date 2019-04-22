@@ -1,4 +1,5 @@
 import random
+from multiprocessing import Pool
 from shapely.affinity import scale, translate
 from shapely.geometry import Point
 import numpy as np
@@ -8,13 +9,31 @@ def distance_to(point, geom):
     if geom.geom_type == 'Polygon':
         all_rings = list(geom.interiors)
         all_rings.insert(0, geom.exterior)
+    elif geom.geom_type == 'MultiPolygon':
+        all_rings =[]
+        for geom_ in geom.geoms:
+            all_rings.extend(list(geom_.interiors))
+            all_rings.insert(0, geom_.exterior)
     else:
-        raise NotImplementedError("distance_to not implemented for this geometry type")
+        raise NotImplementedError("distance_to not implemented for this geometry type {}".format(geom.geom_type))
     
     distances = [point.distance(ring) for ring in all_rings]
     return min(distances)
 
-def random_points_within(poly, num_points, min_distance=0.0):
+def random_points_within_mp(poly, num_points, min_distance=0.0, processes=4):
+    points_per_processor = num_points / processes
+    num_points_list = [points_per_processor] * 4
+    args = [[poly, num_points_, min_distance, i]for i, num_points_ in enumerate(num_points_list)]
+
+    with Pool(processes=processes) as pool:
+        points = pool.starmap(random_points_within, args)
+    
+    return np.vstack(points)
+
+
+def random_points_within(poly, num_points, min_distance=0.0, seed=1):
+    np.random.seed(seed)
+    random.seed(seed)
     min_x, min_y, max_x, max_y = poly.bounds
     points = []
     while len(points) < num_points:
@@ -41,7 +60,7 @@ def holes_poly(poly, num_holes=10, hole_radius=5.0):
     working_poly = poly
     for i in range(num_holes):
         # print('Hole ', i)
-        point = random_points_within(working_poly, 1, hole_radius)[0]
+        point = random_points_within(working_poly, 1, hole_radius * 2)[0]
         hole = Point(point[0], point[1]).buffer(hole_radius)
         working_poly = working_poly.difference(hole)
 

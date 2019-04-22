@@ -138,7 +138,6 @@ def run_tests(point_fpath, config):
         _, timings = run_test_postgis(point_fpath, **postgis_kwargs)
         records.extend(create_records(timings, shape_name, num_points, alg='postgis'))
     if 'spatialite' in config['algs']:
-        logger.info("Running spatialite")
         # Spatialite Timings
         _, timings = run_test_spatialite(point_fpath, **spatialite_kwargs)
         records.extend(create_records(timings, shape_name, num_points, alg='spatialite'))
