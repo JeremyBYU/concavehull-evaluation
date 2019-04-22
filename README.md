@@ -66,6 +66,7 @@ We upload the data to the database server before we begin timing. Once data is u
 1. Time to transmit SQL text command to server (measured to be less than 1 ms (local))
 2. Time to parse text command and execute algorithm.
 3. Time to send back raw binary polygon data (WKB) to client. Note the polygon is much smaller than the point clouds (1-10).
+    * Point Size 128000, Size of WKB: 2688042, Size of Polygon: 13451 (Bytes)
 
 We can also time using `psql` using this command - `psql --host=localhost -U concave -c '\timing' -c 'SELECT ST_ConcaveHull(Geometry, .90, false) as polygon FROM concave'`.
 This timing was found to be roughly equivalent to the python command (actually a little slower for some reason..)

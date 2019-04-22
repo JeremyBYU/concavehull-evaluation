@@ -62,8 +62,6 @@ def run_test(point_fpath, save_dir=DEFAULT_CGAL_SAVE_DIR, n=1, alpha=10, save_po
     #     plot_line(ax, line, index)
     # plt.show()
 
-
-    print(timings)
     return union_lines_poly, timings
 
     

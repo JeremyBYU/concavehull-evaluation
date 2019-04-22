@@ -7,7 +7,7 @@ from shapely.geometry import asMultiPoint, asPoint
 from shapely.wkb import dumps, loads
 
 from concave_evaluation.helpers import save_shapely, modified_fname
-from concave_evaluation import (DEFAULT_SPATIALITE_DB, DEFAULT_TEST_FILE)
+from concave_evaluation import (DEFAULT_SPATIALITE_DB, DEFAULT_TEST_FILE, DEFAULT_SL_SAVE_DIR)
 INIT_TABLE = """
 SELECT DropGeoTable('concave');
 
@@ -69,7 +69,7 @@ class DBConn(object):
         self.cursor = self.conn.cursor()
 
 
-def run_test(point_fpath, save_dir=DEFAULT_TEST_FILE, db_path=DEFAULT_SPATIALITE_DB, n=1,
+def run_test(point_fpath, save_dir=DEFAULT_SL_SAVE_DIR, db_path=DEFAULT_SPATIALITE_DB, n=1,
              factor=3.0, save_poly=True, **kwargs):
     points = np.loadtxt(point_fpath)
     db = DBConn(db_path, use_row=True)
@@ -81,5 +81,5 @@ def run_test(point_fpath, save_dir=DEFAULT_TEST_FILE, db_path=DEFAULT_SPATIALITE
 
     if save_poly:
         save_shapely(polygon, save_fname, alg='spatialite')
-    print(timings)
+
     return polygon, timings

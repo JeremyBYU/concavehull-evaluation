@@ -36,7 +36,7 @@ def insert_multipoint(connection, points, test_name='test'):
     with connection.cursor() as cursor:
         cursor.execute(query, (test_name, wkb))
 
-    print("Size of WKB:", sys.getsizeof(wkb))
+    # print("Size of WKB:", sys.getsizeof(wkb))
 
     connection.commit()
 
@@ -58,7 +58,7 @@ def extract_concave_hull(connection, test_name, n=1, target_percent=1.0):
             time_ms = (t1 - t0) * 1000
             timings.append(time_ms)
     # load the actual polygon into a shapely geometry, not timed
-    print("Size of Polygon:", sys.getsizeof(result['polygon']))
+    # print("Size of Polygon:", sys.getsizeof(result['polygon']))
     final_geometry = loads(result['polygon'], hex=True)
     # This may not be a polygon, filter out
     if final_geometry.geom_type == 'GeometryCollection':
@@ -93,5 +93,4 @@ def run_test(point_fpath, save_dir=DEFAULT_PG_SAVE_DIR, db_path=DEFAULT_PG_CONN,
         db.conn, test_name, target_percent=target_percent, n=n)
     if save_poly:
         save_shapely(polygon, save_fname, alg='postgis')
-    print(timings)
     return polygon, timings

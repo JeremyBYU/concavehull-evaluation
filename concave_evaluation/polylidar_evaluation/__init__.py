@@ -3,7 +3,7 @@ import logging
 from os import path
 from pathlib import Path
 from shapely.geometry import Polygon, MultiPolygon
-from polylidar import extractPolygons
+from polylidar import extractPolygons, extractPolygonsAndTimings
 import numpy as np
 from concave_evaluation.helpers import get_poly_coords, save_shapely, modified_fname
 from concave_evaluation import DEFAULT_PL_SAVE_DIR
@@ -59,14 +59,13 @@ def get_polygon(points, noise=2.0, alpha=0.0, xyThresh=0.0, add_noise=False, **k
 
     polylidar_kwargs = {"alpha": alpha, 'xyThresh': xyThresh}
     # Timing should start here
-    t0 = time.time()
-    polygons = extractPolygons(points, **polylidar_kwargs)
-    end = (time.time() - t0) * 1000
+    # t0 = time.time()
+    polygons, timings = extractPolygonsAndTimings(points, **polylidar_kwargs)
+    # end = (time.time() - t0) * 1000
     # Timing should end here
-
     polygons = convert_to_shapely_polygons(
         polygons, points, return_first=False)
-    return polygons, end
+    return polygons, timings
 
 
 def run_test(point_fpath, save_dir=DEFAULT_PL_SAVE_DIR, n=1, alpha=0.0, xyThresh=10, save_poly=True, **kwargs):
@@ -83,7 +82,5 @@ def run_test(point_fpath, save_dir=DEFAULT_PL_SAVE_DIR, n=1, alpha=0.0, xyThresh
     save_fname, _ = modified_fname(point_fpath, save_dir)
     if save_poly:
         save_shapely(polygons, save_fname, alg='polylidar')
-
-    print(time_ms)
 
     return polygons, time_ms

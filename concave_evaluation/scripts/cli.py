@@ -22,6 +22,7 @@ import pandas as pd
 import hvplot
 import hvplot.pandas
 
+from concave_evaluation import DEFAULT_SHAPE_FILE
 from concave_evaluation.helpers import (round_dict, measure_concavity, PythonLiteralOption, plot_poly_make_fig,
                                         get_max_bounds_polys, plot_poly, scale_axes, load_polygon)
 from concave_evaluation.test_generation.polygen import generatePolygon
@@ -46,7 +47,7 @@ cli.add_command(evaluate)
 
 @cli.command()
 @click.option('-i', '--input-file', type=click.Path(exists=True), default='test_fixtures/unprocessed/mi_glove_mercator.geojson')
-@click.option('-o', '--output-file', type=click.Path(exists=False), default='test_fixtures/gt_shapes/mi_glove.geojson')
+@click.option('-o', '--output-file', type=click.Path(exists=False), default=DEFAULT_SHAPE_FILE)
 @click.option('-m', '--max-size', type=float, default=200, required=False,
               show_default=True, help="Max Size of any dimension")
 @click.option('-p', '--plot', default=False, is_flag=True, required=False,
@@ -64,11 +65,11 @@ def scale(input_file, output_file, max_size, plot):
         plot_poly_make_fig(poly)
 
 @cli.command()
-@click.option('-i', '--input-file', type=click.Path(exists=True), default='test_fixtures/gt_shapes/mi_glove.geojson')
-@click.option('-o', '--output-file', type=click.Path(exists=False), default='test_fixtures/gt_shapes/mi_glove_holes.geojson')
+@click.option('-i', '--input-file', type=click.Path(exists=True), default=DEFAULT_SHAPE_FILE)
+@click.option('-o', '--output-file', type=click.Path(exists=False), default='test_fixtures/gt_shapes/migloveholes.geojson')
 @click.option('-nh', '--number-holes', type=int, default=10, required=False,
               show_default=True, help="Number of holes")
-@click.option('-hr', '--hole-radius', type=float, default=5.0, required=False,
+@click.option('-hr', '--hole-radius', type=float, default=10.0, required=False,
               show_default=True, help="Hole Radius")
 @click.option('-p', '--plot', default=False, is_flag=True, required=False,
               help="Plot polygons")
@@ -87,10 +88,10 @@ def holes(input_file, output_file, number_holes, hole_radius, plot):
 
     
 @cli.command()
-@click.option('-i', '--input-file', type=click.Path(exists=True), default='test_fixtures/gt_shapes/mi_glove.geojson')
+@click.option('-i', '--input-file', type=click.Path(exists=True), default=DEFAULT_SHAPE_FILE)
 # @click.option('-pd', '--point-densities', cls=PythonLiteralOption, default="[0.1, 0.5, 1.0, 1.5, 2.0]", required=False,
 #               show_default=True, help="Point Density to Generate of Polygon.")
-@click.option('-np', '--number-points', cls=PythonLiteralOption, default="[2000, 10000, 20000, 30000, 40000]", required=False,
+@click.option('-np', '--number-points', cls=PythonLiteralOption, default="[2000, 4000, 8000, 16000, 32000, 64000, 128000]", required=False,
               show_default=True, help="Number of points in polygon")           
 @click.option('-d', '--distribution', type=click.Choice(['uniform']), default='uniform')
 @click.option('-sd', '--save-directory', type=click.Path(exists=True), default='test_fixtures/points')
