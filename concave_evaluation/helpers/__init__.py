@@ -4,8 +4,10 @@ from os import path
 from pathlib import Path
 
 import click
+import numpy as np
 import ast
-from shapely.geometry import Polygon, shape, MultiPolygon
+from shapely.geometry import Polygon, shape, MultiPolygon, box, Point, LineString
+from shapely.affinity import scale
 from descartes import PolygonPatch
 import matplotlib.pyplot as plt
 from shapely_geojson import dump, Feature
@@ -33,6 +35,21 @@ def measure_concavity(polygon):
     concavity = (concave_perimeter - convex_perimeter) / convex_perimeter
     return concavity
 
+
+def fake_building(x_dim=[0, 10, 1], y_dim=[0,10, 1], holes=[]):
+    box_base = box(x_dim[0], y_dim[0], x_dim[1], y_dim[1])
+    box_arm = box(x_dim[1] * 0.5, y_dim[1], x_dim[1], y_dim[1] * 1.5)
+    building = box_base.union(box_arm)
+    for hole_meta in holes:
+        hole = Point(hole_meta[0], hole_meta[1]).buffer(hole_meta[2])
+        building = building.difference(hole)
+    all_points = []
+    for y in range(0, int(y_dim[1] * 1.5), x_dim[2]):
+        for x in range(0, x_dim[1], y_dim[2]):
+            point = Point(x, y)
+            if point.within(building) or point.intersects(building):
+                all_points.append([x, y])
+    return np.array(all_points), building
 
 def round_dict(dict_value):
     for k, v in dict_value.items():
@@ -129,9 +146,19 @@ def get_poly_coords(outline, points, is_3D=False):
     return [get_point(pi, points, is_3D) for pi in outline]
 
 
-def plot_line(ax, ob, index=-1):
+def plot_line(ax, ob, color=GRAY, linewidth=3, index=-1):
     x, y = ob.xy
-    ax.plot(x, y, color=GRAY, linewidth=3, solid_capstyle='round', zorder=1)
+    ax.plot(x, y, color=color, linewidth=linewidth, solid_capstyle='round', zorder=1)
+    if index > 0:
+        ax.text(x[0], y[0], str(index))
+
+def plot_arrow(ax, ob, color=GRAY, scale_factor=1.0, offset=0.00, offset_side='right', index=-1, **kwargs):
+    ls_ = scale(ob, xfact=scale_factor, yfact=scale_factor)
+    ls_ = ls_.parallel_offset(offset, offset_side)
+    if offset_side == 'right':
+        ls_ = LineString(list(reversed(ls_.coords)))
+    x, y = ls_.xy
+    ax.arrow(x[0], y[0], x[1] - x[0], y[1]-y[0], color=color, zorder=1, **kwargs)
     if index > 0:
         ax.text(x[0], y[0], str(index))
 
