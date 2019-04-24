@@ -73,8 +73,14 @@ def get_max_bound(bound1, bound2):
 
     return (minx, miny, maxx, maxy)
 
-
 def plot_poly(polygon, ax, color='green', plot_holes=False):
+    geoms = [polygon]
+    if polygon.geom_type == 'MultiPolygon':
+        geoms = list(polygon.geoms)
+    for geom in geoms:
+        plot_poly_(geom, ax, plot_holes=plot_holes, color=color)
+
+def plot_poly_(polygon, ax, color='green', plot_holes=False):
     poly_outline = Polygon(polygon.exterior.coords)
     outlinePatch = PolygonPatch(
         poly_outline, ec=color, fill=False, linewidth=2)
