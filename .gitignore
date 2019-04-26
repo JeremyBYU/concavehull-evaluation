@@ -3,6 +3,7 @@ test_fixtures/points
 *.mp4
 *.html
 assets/qgis/*.qgz
+*.pdf
 
 archive
 scratch

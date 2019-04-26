@@ -2,6 +2,7 @@ import logging
 import json
 from os import path
 from pathlib import Path
+import math
 
 import click
 import numpy as np
@@ -26,6 +27,15 @@ class PythonLiteralOption(click.Option):
         except:
             raise click.BadParameter(value)
 
+
+def get360Angle(v1, v2):
+    dot = np.dot(v1,v2)
+    det = v1[0] * v2[1] - v1[1] * v2[0]
+    ang = np.arctan2(det, dot)
+    if ang < 0:
+        ang += np.pi * 2
+    
+    return math.degrees(ang)
 
 def measure_concavity(polygon):
     convex_hull = polygon.convex_hull
@@ -73,17 +83,17 @@ def get_max_bound(bound1, bound2):
 
     return (minx, miny, maxx, maxy)
 
-def plot_poly(polygon, ax, color='green', plot_holes=False):
+def plot_poly(polygon, ax, color='green', plot_holes=False, **kwargs):
     geoms = [polygon]
     if polygon.geom_type == 'MultiPolygon':
         geoms = list(polygon.geoms)
     for geom in geoms:
-        plot_poly_(geom, ax, plot_holes=plot_holes, color=color)
+        plot_poly_(geom, ax, plot_holes=plot_holes, color=color, **kwargs)
 
-def plot_poly_(polygon, ax, color='green', plot_holes=False):
+def plot_poly_(polygon, ax, color='green', plot_holes=False, fill=False, **kwargs):
     poly_outline = Polygon(polygon.exterior.coords)
     outlinePatch = PolygonPatch(
-        poly_outline, ec=color, fill=False, linewidth=2)
+        poly_outline, ec=color, fill=fill, fc=color, linewidth=2)
     ax.add_patch(outlinePatch)
 
     if plot_holes:
@@ -158,15 +168,55 @@ def plot_line(ax, ob, color=GRAY, linewidth=3, index=-1):
     if index > 0:
         ax.text(x[0], y[0], str(index))
 
-def plot_arrow(ax, ob, color=GRAY, scale_factor=1.0, offset=0.00, offset_side='right', index=-1, **kwargs):
+def plot_arrow(ax, ob, color=GRAY, scale_factor=1.0, offset=0.00, offset_side='right', index=None, center_text=True, fontsize=10, **kwargs):
     ls_ = scale(ob, xfact=scale_factor, yfact=scale_factor)
     ls_ = ls_.parallel_offset(offset, offset_side)
     if offset_side == 'right':
         ls_ = LineString(list(reversed(ls_.coords)))
     x, y = ls_.xy
     ax.arrow(x[0], y[0], x[1] - x[0], y[1]-y[0], color=color, zorder=1, **kwargs)
-    if index > 0:
-        ax.text(x[0], y[0], str(index))
+
+    if index is not None:
+        # Get angle of this edge
+        v0 = np.array([1, 0])
+        v1 = np.array([x[1] - x[0], y[1] - y[0]])
+        v0_ = v0 / np.linalg.norm(v0)
+        v1_ = v1 / np.linalg.norm(v1)
+        deg = get360Angle(v0_, v1_)
+        deg_rot = deg
+        # print("Degree: ", deg)
+        offset_ = offset * 2
+        x_shift = 0
+        y_shift = 0
+        if deg > 0 and deg < 90:
+            offset_ = offset * 10
+        elif deg >= 90 and deg < 180:
+            deg_rot = deg - 180
+            offset_ = offset * 6
+        elif deg == 180:
+            deg_rot = deg - 180
+            offset_ = offset * 6
+        elif deg > 180 and deg < 270:
+            deg_rot = deg - 180
+        elif deg >= 270 and deg < 360:
+            deg_rot =  deg - 360
+
+        
+        if deg == 180 or deg == 0:
+            x_shift = -0.25
+        elif deg == 90 or deg == 270:
+            y_shift = 0.1
+            x_shift = -0.05
+        elif deg > 90 and deg <= 315:
+            x_shift = -.1
+            y_shift = +.1
+        # print(ls_.centroid)
+  
+        # print("Offset: " , offset_)
+        ls_ = ls_.parallel_offset(offset_, 'left')
+        center = ls_.centroid
+        # print(center, index)
+        ax.text(center.x + x_shift, center.y + y_shift, str(index), rotation=deg_rot, fontsize=fontsize)
 
 
 def save_shapely(shape, fname, uid="", alg='polylidar'):
