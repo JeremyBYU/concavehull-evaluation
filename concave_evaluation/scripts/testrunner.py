@@ -91,25 +91,42 @@ def all(ctx, config_file, input_file, number_iter):
         ctx.forward(spatialite)
         ctx.forward(postgis)
 
-def create_records(timings, shape_name, num_points, alg='polylidar', section='all'):
+def create_records(timings, shape_name, num_points, l2_norm, alg='polylidar', section='all'):
     records = []
     for time in timings:
-        records.append(dict(alg=alg, shape=shape_name, points=num_points, time=time, section=section))
+        records.append(dict(alg=alg, shape=shape_name, points=num_points, l2_norm=np.NaN, time=time, section=section))
+
+    if section == 'all':
+        records.append(dict(alg=alg, shape=shape_name, points=num_points, l2_norm=l2_norm, time=np.NaN, section=section))
 
     return records
 
 def run_tests(point_fpath, config):
-    global_kwargs = config['globals']
-    # Get individual arguments for each 
-    polylidar_kwargs = dict(**global_kwargs, **config['polylidar'])
-    cgal_kwargs = dict(**global_kwargs, **config['cgal'])
-    spatialite_kwargs = dict(**global_kwargs, **config['spatialite'])
-    postgis_kwargs = dict(**global_kwargs, **config['postgis'])
-
     records = []
     file_name = Path(point_fpath).stem
     shape_name, num_points = file_name.split('_')
     num_points = int(num_points)
+
+    # Global algorithm parameters
+    alg_params = dict(config['alg_params'])
+
+    # Check if there are individual alg parameters for this test params, if so then update
+    if config['tests'].get(shape_name):
+        test_alg_params = config['tests'].get(shape_name)
+        alg_params.update(**test_alg_params)
+
+    # Skip if number of points not requested for a test
+    if not num_points in config['n_points'] or not shape_name in config['shapes']:
+        logger.info("Skipping file %r", file_name)
+        return records
+
+    global_kwargs = config['common_alg_params']
+    # Final params for this test
+    polylidar_kwargs = dict(**global_kwargs, **alg_params['polylidar'])
+    cgal_kwargs = dict(**global_kwargs, **alg_params['cgal'])
+    spatialite_kwargs = dict(**global_kwargs, **alg_params['spatialite'])
+    postgis_kwargs = dict(**global_kwargs, **alg_params['postgis'])
+
 
     # alpha can be smaller for cgal and polylidar when the point density is higher
     # spatialite and postgis parameters are already normalized with point density
@@ -121,26 +138,30 @@ def run_tests(point_fpath, config):
 
     # Polylidar Timings, has more fine grain timings provided
     if 'polylidar' in config['algs']:
-        _, timings = run_test_polylidar(point_fpath, **polylidar_kwargs)
+        _, timings, l2_norm = run_test_polylidar(point_fpath, **polylidar_kwargs)
+        logger.info("Running Polylidar")
         timings = np.array(timings)
         for i, section in enumerate(['delaunay', 'mesh', 'polygon', 'all']):
             if section == 'all':
                 timings_section = np.sum(timings, axis=1)
             else:
                 timings_section = timings[:, i]
-            records.extend(create_records(timings_section, shape_name, num_points, alg='polylidar', section=section))
+            records.extend(create_records(timings_section, shape_name, num_points, l2_norm, alg='polylidar', section=section))
     # CGAL Timings
     if 'cgal' in config['algs']:
-        _, timings = run_test_cgal(point_fpath, **cgal_kwargs)
-        records.extend(create_records(timings, shape_name, num_points, alg='cgal'))
+        logger.info("Running CGAL")
+        _, timings, l2_norm = run_test_cgal(point_fpath, **cgal_kwargs)
+        records.extend(create_records(timings, shape_name, num_points, l2_norm, alg='cgal'))
     # PostGIS Timings
     if 'postgis' in config['algs']:
-        _, timings = run_test_postgis(point_fpath, **postgis_kwargs)
-        records.extend(create_records(timings, shape_name, num_points, alg='postgis'))
+        logger.info("Running PostGIS")
+        _, timings, l2_norm = run_test_postgis(point_fpath, **postgis_kwargs)
+        records.extend(create_records(timings, shape_name, num_points, l2_norm, alg='postgis'))
+    # Spatialite Timings
     if 'spatialite' in config['algs']:
-        # Spatialite Timings
-        _, timings = run_test_spatialite(point_fpath, **spatialite_kwargs)
-        records.extend(create_records(timings, shape_name, num_points, alg='spatialite'))
+        logger.info("Running Spatialite")
+        _, timings, l2_norm = run_test_spatialite(point_fpath, **spatialite_kwargs)
+        records.extend(create_records(timings, shape_name, num_points, l2_norm, alg='spatialite'))
     return records
 
 def run_as_config(config_file):
@@ -148,12 +169,15 @@ def run_as_config(config_file):
         config = json.load(f)
     
     directory_name = config['points_dir']
+    gt_dir = config['gt_dir']
     filenames = listdir(directory_name)
     point_files = [ filename for filename in filenames if filename.endswith('.csv')]
     all_records = []
     for point_file in point_files:
         logger.info("Processing file %r", point_file)
         point_fpath = path.join(directory_name, point_file)
+        gt_fpath = path.join(gt_dir, point_file.split('_')[0] + '.geojson')
+        config['common_alg_params']['gt_fpath'] = gt_fpath
         all_records.extend(run_tests(point_fpath, config))
     
     df = pd.DataFrame.from_records(all_records)

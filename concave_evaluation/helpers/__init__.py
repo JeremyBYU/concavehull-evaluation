@@ -46,10 +46,14 @@ def measure_concavity(polygon):
     return concavity
 
 
-def fake_building(x_dim=[0, 10, 1], y_dim=[0,10, 1], holes=[]):
+def fake_building(x_dim=[0, 10, 1], y_dim=[0,10, 1], build_arm=True, holes=[]):
     box_base = box(x_dim[0], y_dim[0], x_dim[1], y_dim[1])
-    box_arm = box(x_dim[1] * 0.5, y_dim[1], x_dim[1], y_dim[1] * 1.5)
-    building = box_base.union(box_arm)
+    if build_arm:
+        box_arm = box(x_dim[1] * 0.5, y_dim[1], x_dim[1], y_dim[1] * 1.5)
+        building = box_base.union(box_arm)
+    else:
+        building = box_base
+
     for hole_meta in holes:
         hole = Point(hole_meta[0], hole_meta[1]).buffer(hole_meta[2])
         building = building.difference(hole)
@@ -224,6 +228,25 @@ def save_shapely(shape, fname, uid="", alg='polylidar'):
     with open(fname, "w") as f:
         dump(feature, f, indent=2)
 
+
+def evaluate_l2(gt_shape, predicted_shape):
+    left = gt_shape.difference(predicted_shape)
+    right = predicted_shape.difference(gt_shape)
+    numerator = left.union(right).area
+    denominator = predicted_shape.area
+    return numerator / denominator
+
+def evaluate_l2(gt_shape, predicted_shape):
+    left = gt_shape.difference(predicted_shape)
+    right = predicted_shape.difference(gt_shape)
+    numerator = left.union(right).area
+    denominator = predicted_shape.area
+    l2 = numerator / denominator
+    return l2
+
+def evaluate_iou(true_boundary, estimated):
+    iou = estimated.intersection(true_boundary).area / estimated.union(true_boundary).area
+    return iou
 
 def extract_shell(poly, allow_multiple=False):
     holes = [Polygon(interior) for interior in poly.interiors]

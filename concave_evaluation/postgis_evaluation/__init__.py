@@ -10,7 +10,7 @@ from shapely.wkb import dumps, loads
 import psycopg2
 import psycopg2.extras
 
-from concave_evaluation.helpers import save_shapely, modified_fname
+from concave_evaluation.helpers import save_shapely, modified_fname, load_polygon, evaluate_l2
 from concave_evaluation import (DEFAULT_TEST_FILE, DEFAULT_PG_SAVE_DIR, DEFAULT_PG_CONN)
 
 INIT_TABLE = """
@@ -82,7 +82,7 @@ class DBConnPostGIS(object):
 
 
 def run_test(point_fpath, save_dir=DEFAULT_PG_SAVE_DIR, db_path=DEFAULT_PG_CONN, n=1,
-             target_percent=0.90, save_poly=True, **kwargs):
+             target_percent=0.90, save_poly=True, gt_fpath=None, **kwargs):
     points = np.loadtxt(point_fpath)
     db = DBConnPostGIS(db_path)
 
@@ -93,4 +93,10 @@ def run_test(point_fpath, save_dir=DEFAULT_PG_SAVE_DIR, db_path=DEFAULT_PG_CONN,
         db.conn, test_name, target_percent=target_percent, n=n)
     if save_poly:
         save_shapely(polygon, save_fname, alg='postgis')
-    return polygon, timings
+
+    l2_norm = np.NaN
+    if gt_fpath:
+        gt_shape, _ = load_polygon(gt_fpath)
+        l2_norm = evaluate_l2(gt_shape, polygon)
+
+    return polygon, timings, l2_norm

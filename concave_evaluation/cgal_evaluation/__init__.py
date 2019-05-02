@@ -8,7 +8,7 @@ from shapely.geometry import LineString
 import matplotlib.pyplot as plt
 logger = logging.getLogger("Concave")
 
-from concave_evaluation.helpers import plot_line, lines_to_polygon, plot_poly_make_fig, save_shapely, modified_fname
+from concave_evaluation.helpers import plot_line, lines_to_polygon, plot_poly_make_fig, save_shapely, modified_fname, load_polygon, evaluate_l2
 from concave_evaluation import DEFAULT_CGAL_SAVE_DIR, CGAL_BIN
 
 
@@ -38,7 +38,7 @@ def launch_cgal(point_fpath, edge_fpath, alpha=10, n=1):
         logger.exception("Error launching cgal with args %r", args)
     return timings
 
-def run_test(point_fpath, save_dir=DEFAULT_CGAL_SAVE_DIR, n=1, alpha=10, save_poly=True, **kwargs):
+def run_test(point_fpath, save_dir=DEFAULT_CGAL_SAVE_DIR, n=1, alpha=10, save_poly=True, gt_fpath=None, **kwargs):
 
     save_fname, test_name = modified_fname(point_fpath, save_dir)
     edge_fpath = path.join(save_dir, 'output.csv')
@@ -58,13 +58,18 @@ def run_test(point_fpath, save_dir=DEFAULT_CGAL_SAVE_DIR, n=1, alpha=10, save_po
             logger.error("CGAL polygon not valid %r", point_fpath)
         save_shapely(union_lines_poly, save_fname, alg='cgal')
 
+    l2_norm = np.NaN
+    if gt_fpath:
+        gt_shape, _ = load_polygon(gt_fpath)
+        l2_norm = evaluate_l2(gt_shape, union_lines_poly)
+
     # fig = plt.figure(1, figsize=(5,5), dpi=180)
     # ax = fig.add_subplot(111)
     # for index, line in enumerate(all_lines):
     #     plot_line(ax, line, index)
     # plt.show()
 
-    return union_lines_poly, timings
+    return union_lines_poly, timings, l2_norm
 
     
 

@@ -5,7 +5,7 @@ from pathlib import Path
 from shapely.geometry import Polygon, MultiPolygon
 from polylidar import extractPolygons, extractPolygonsAndTimings
 import numpy as np
-from concave_evaluation.helpers import get_poly_coords, save_shapely, modified_fname
+from concave_evaluation.helpers import get_poly_coords, save_shapely, modified_fname, load_polygon, evaluate_l2
 from concave_evaluation import DEFAULT_PL_SAVE_DIR
 
 logger = logging.getLogger("Concave")
@@ -68,7 +68,7 @@ def get_polygon(points, noise=2.0, alpha=0.0, xyThresh=0.0, add_noise=False, **k
     return polygons, timings
 
 
-def run_test(point_fpath, save_dir=DEFAULT_PL_SAVE_DIR, n=1, alpha=0.0, xyThresh=10, save_poly=True, **kwargs):
+def run_test(point_fpath, save_dir=DEFAULT_PL_SAVE_DIR, n=1, alpha=0.0, xyThresh=10, save_poly=True, gt_fpath=None, **kwargs):
     # Choose alpha parameter or xyThresh
     if alpha > 0:
         xyThresh = 0.0
@@ -82,5 +82,10 @@ def run_test(point_fpath, save_dir=DEFAULT_PL_SAVE_DIR, n=1, alpha=0.0, xyThresh
     save_fname, _ = modified_fname(point_fpath, save_dir)
     if save_poly:
         save_shapely(polygons, save_fname, alg='polylidar')
+    
+    l2_norm = np.NaN
+    if gt_fpath:
+        gt_shape, _ = load_polygon(gt_fpath)
+        l2_norm = evaluate_l2(gt_shape, polygons)
 
-    return polygons, time_ms
+    return polygons, time_ms, l2_norm
