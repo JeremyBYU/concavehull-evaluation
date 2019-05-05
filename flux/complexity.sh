@@ -3,7 +3,7 @@
 
 #“#SBATCH” directives that convey submission options:
 
-#SBATCH --job-name=polylidar+complexity
+#SBATCH --job-name=polylidar_complexity
 #SBATCH --mail-type=BEGIN,END
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
@@ -13,6 +13,6 @@
 #SBATCH --partition=standard
 
 # The application(s) to execute along with its input arguments and options:
-
+module load python-anaconda3;
 source activate concave;
 python ./scripts/complexity_polylidar.py
