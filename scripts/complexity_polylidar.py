@@ -27,7 +27,7 @@ def polylidar_timings(reps=3, n_val=n_val_good):
 
 
 def main():
-    records = polylidar_timings(reps=3, n_val=n_val_test)
+    records = polylidar_timings(reps=3, n_val=n_val_good)
     df = pd.DataFrame.from_records(records)
     df = df[['n', 'delaunay', 'region', 'polygon']]
     df.to_csv("./analysis/polylidar_complexity.csv", index=False)
