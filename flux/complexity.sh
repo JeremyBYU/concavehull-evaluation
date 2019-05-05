@@ -7,7 +7,7 @@
 #SBATCH --mail-type=BEGIN,END
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --mem-per-cpu=8000m 
+#SBATCH --mem-per-cpu=24000m 
 #SBATCH --time=10:00
 #SBATCH --account=jdcasta
 #SBATCH --partition=standard
