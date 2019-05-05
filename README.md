@@ -85,6 +85,14 @@ However do note that CGAL actually does some work that Polylidar and all the oth
 to be rapidly constructed.  This is a really neat feature if you want to rapidly see a suite of different levels of concavity of a point cloud. However if you just want one answer for one alpha value, this is excess work.
 
 
+## Notes
+
+
+### Profile
+
+1. `python -m yep -v -- ./scripts/profile_polylidar.py`
+
+
 
 
 
