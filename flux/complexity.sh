@@ -9,7 +9,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --mem-per-cpu=24000m 
 #SBATCH --time=10:00
-#SBATCH --account=jdcasta
+#SBATCH --account=test
 #SBATCH --partition=standard
 
 # The application(s) to execute along with its input arguments and options:
