@@ -19,6 +19,7 @@ from concave_evaluation.postgis_evaluation import run_test as run_test_postgis
 
 logger = logging.getLogger("Concave")
 
+
 @click.group()
 def evaluate():
     """Evaluates conave hull implementations"""
@@ -91,15 +92,20 @@ def all(ctx, config_file, input_file, number_iter):
         ctx.forward(spatialite)
         ctx.forward(postgis)
 
+
 def create_records(timings, shape_name, num_points, l2_norm, alg='polylidar', section='all'):
     records = []
+    has_hole = 'hole' in shape_name
     for time in timings:
-        records.append(dict(alg=alg, shape=shape_name, points=num_points, l2_norm=np.NaN, time=time, section=section))
+        records.append(dict(alg=alg, shape=shape_name, points=num_points,
+                            l2_norm=np.NaN, time=time, holes=has_hole, section=section))
 
     if section == 'all':
-        records.append(dict(alg=alg, shape=shape_name, points=num_points, l2_norm=l2_norm, time=np.NaN, section=section))
+        records.append(dict(alg=alg, shape=shape_name, points=num_points,
+                            l2_norm=l2_norm, time=np.NaN, holes=has_hole, section=section))
 
     return records
+
 
 def run_tests(point_fpath, config):
     records = []
@@ -127,7 +133,6 @@ def run_tests(point_fpath, config):
     spatialite_kwargs = dict(**global_kwargs, **alg_params['spatialite'])
     postgis_kwargs = dict(**global_kwargs, **alg_params['postgis'])
 
-
     # alpha can be smaller for cgal and polylidar when the point density is higher
     # spatialite and postgis parameters are already normalized with point density
     if num_points >= 16000:
@@ -135,10 +140,10 @@ def run_tests(point_fpath, config):
         cgal_kwargs['alpha'] = alpha ** 2
         polylidar_kwargs['alpha'] = alpha
 
-
     # Polylidar Timings, has more fine grain timings provided
     if 'polylidar' in config['algs']:
-        _, timings, l2_norm = run_test_polylidar(point_fpath, **polylidar_kwargs)
+        _, timings, l2_norm = run_test_polylidar(
+            point_fpath, **polylidar_kwargs)
         logger.info("Running Polylidar")
         timings = np.array(timings)
         for i, section in enumerate(['delaunay', 'mesh', 'polygon', 'all']):
@@ -146,32 +151,39 @@ def run_tests(point_fpath, config):
                 timings_section = np.sum(timings, axis=1)
             else:
                 timings_section = timings[:, i]
-            records.extend(create_records(timings_section, shape_name, num_points, l2_norm, alg='polylidar', section=section))
+            records.extend(create_records(timings_section, shape_name,
+                                          num_points, l2_norm, alg='polylidar', section=section))
     # CGAL Timings
     if 'cgal' in config['algs']:
         logger.info("Running CGAL")
         _, timings, l2_norm = run_test_cgal(point_fpath, **cgal_kwargs)
-        records.extend(create_records(timings, shape_name, num_points, l2_norm, alg='cgal'))
+        records.extend(create_records(timings, shape_name,
+                                      num_points, l2_norm, alg='cgal'))
     # PostGIS Timings
     if 'postgis' in config['algs']:
         logger.info("Running PostGIS")
         _, timings, l2_norm = run_test_postgis(point_fpath, **postgis_kwargs)
-        records.extend(create_records(timings, shape_name, num_points, l2_norm, alg='postgis'))
+        records.extend(create_records(timings, shape_name,
+                                      num_points, l2_norm, alg='postgis'))
     # Spatialite Timings
     if 'spatialite' in config['algs']:
         logger.info("Running Spatialite")
-        _, timings, l2_norm = run_test_spatialite(point_fpath, **spatialite_kwargs)
-        records.extend(create_records(timings, shape_name, num_points, l2_norm, alg='spatialite'))
+        _, timings, l2_norm = run_test_spatialite(
+            point_fpath, **spatialite_kwargs)
+        records.extend(create_records(timings, shape_name,
+                                      num_points, l2_norm, alg='spatialite'))
     return records
+
 
 def run_as_config(config_file):
     with open(config_file) as f:
         config = json.load(f)
-    
+
     directory_name = config['points_dir']
     gt_dir = config['gt_dir']
     filenames = listdir(directory_name)
-    point_files = [ filename for filename in filenames if filename.endswith('.csv')]
+    point_files = [
+        filename for filename in filenames if filename.endswith('.csv')]
     all_records = []
     for point_file in point_files:
         logger.info("Processing file %r", point_file)
@@ -179,8 +191,6 @@ def run_as_config(config_file):
         gt_fpath = path.join(gt_dir, point_file.split('_')[0] + '.geojson')
         config['common_alg_params']['gt_fpath'] = gt_fpath
         all_records.extend(run_tests(point_fpath, config))
-    
+
     df = pd.DataFrame.from_records(all_records)
     df.to_csv(config['save_csv'], index=False)
-
-    
