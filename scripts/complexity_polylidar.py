@@ -16,11 +16,11 @@ n_val_test=[25_000, 50_000, 100_000]
 def polylidar_timings(reps=3, n_val=n_val_good):
     records = []
     polylidar_kwargs = dict(xyThresh=0.0, alpha=2.0)
-    for j in range(reps):
-        for n in n_val:
-            valmax = int(math.sqrt(n))
-            points = gen_points(xmax=valmax, ymax=valmax)
-            true_n = points.shape[0]
+    for n in n_val:
+        valmax = int(math.sqrt(n))
+        points = gen_points(xmax=valmax, ymax=valmax)
+        true_n = points.shape[0]
+        for j in range(reps):
             polygons, times = extractPolygonsAndTimings(points, **polylidar_kwargs)
             records.append(dict( n=true_n, delaunay=times[0], region=times[1], polygon=times[2]))
     return records
@@ -29,6 +29,7 @@ def polylidar_timings(reps=3, n_val=n_val_good):
 def main():
     records = polylidar_timings(reps=3, n_val=n_val_test)
     df = pd.DataFrame.from_records(records)
+    df = df[['n', 'delaunay', 'region', 'polygon']]
     df.to_csv("./analysis/polylidar_complexity.csv", index=False)
 
 
