@@ -3,6 +3,7 @@
 import json
 from pathlib import Path
 from os import listdir, path
+import math
 import click
 import pandas as pd
 import numpy as np
@@ -15,7 +16,7 @@ from concave_evaluation.polylidar_evaluation import run_test as run_test_polylid
 from concave_evaluation.cgal_evaluation import run_test as run_test_cgal
 from concave_evaluation.spatialite_evaluation import run_test as run_test_spatialite
 from concave_evaluation.postgis_evaluation import run_test as run_test_postgis
-
+from concave_evaluation.helpers import load_polygon
 
 logger = logging.getLogger("Concave")
 
@@ -111,10 +112,12 @@ def run_tests(point_fpath, config):
     records = []
     file_name = Path(point_fpath).stem
     shape_name, num_points = file_name.split('_')
+    gt_fpath = config['common_alg_params']['gt_fpath']
     num_points = int(num_points)
 
     # Global algorithm parameters
     alg_params = dict(config['alg_params'])
+
 
     # Check if there are individual alg parameters for this test params, if so then update
     if config['tests'].get(shape_name):
@@ -135,10 +138,12 @@ def run_tests(point_fpath, config):
 
     # alpha can be smaller for cgal and polylidar when the point density is higher
     # spatialite and postgis parameters are already normalized with point density
-    if num_points >= 16000:
-        alpha = 2
-        cgal_kwargs['alpha'] = alpha ** 2
-        polylidar_kwargs['alpha'] = alpha
+    # The magic parameters are not what concern us. Only if we can get reasonable results.
+    gt_shape, _ = load_polygon(gt_fpath)
+    point_density = gt_shape.area / num_points
+    alpha = math.sqrt(point_density) * 2
+    cgal_kwargs['alpha'] = alpha ** 2
+    polylidar_kwargs['alpha'] = alpha
 
     # Polylidar Timings, has more fine grain timings provided
     if 'polylidar' in config['algs']:
