@@ -229,12 +229,12 @@ def save_shapely(shape, fname, uid="", alg='polylidar'):
         dump(feature, f, indent=2)
 
 
-def evaluate_l2(gt_shape, predicted_shape):
-    left = gt_shape.difference(predicted_shape)
-    right = predicted_shape.difference(gt_shape)
-    numerator = left.union(right).area
-    denominator = predicted_shape.area
-    return numerator / denominator
+# def evaluate_l2(gt_shape, predicted_shape):
+#     left = gt_shape.difference(predicted_shape)
+#     right = predicted_shape.difference(gt_shape)
+#     numerator = left.union(right).area
+#     denominator = predicted_shape.area
+#     return numerator / denominator
 
 def evaluate_l2(gt_shape, predicted_shape):
     left = gt_shape.difference(predicted_shape)

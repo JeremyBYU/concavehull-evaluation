@@ -10,10 +10,11 @@ def gen_points(xmin=0, xmax=10, xstep=1, ymin=0, ymax=10, ystep=1):
     return positions
 
 
-n_val_bad=[25_000, 50_000, 100_000, 200_000, 400_000, 500_000, 650_000, 800_000, 1_000_000, 1_200_000, 1_600_000, 2_000_000, 2_500_000, 3_200_000, 6_400_000]
-n_val_good=[25_000, 50_000, 100_000, 200_000, 400_000, 800_000, 1_600_000, 3_200_000, 6_400_000, 12_800_000, 25_600_000]
+# n_val_bad=[25_000, 50_000, 100_000, 200_000, 400_000, 500_000, 650_000, 800_000, 1_000_000, 1_200_000, 1_600_000, 2_000_000, 2_500_000, 3_200_000, 6_400_000]
+n_val_good=[25_000, 50_000, 100_000, 200_000, 400_000, 800_000, 1_600_000, 3_200_000, 6_400_000]
 n_val_good_giant=[25_000, 50_000, 100_000, 200_000, 400_000, 800_000, 1_600_000, 3_200_000, 6_400_000, 12_800_000, 25_600_000, 51_200_000]
 n_val_test=[25_000, 50_000, 100_000]
+n_medium_only=range(100_000, 10_000_000, 100_000)
 def polylidar_timings(reps=3, n_val=n_val_good):
     records = []
     polylidar_kwargs = dict(xyThresh=0.0, alpha=2.0)
@@ -28,10 +29,10 @@ def polylidar_timings(reps=3, n_val=n_val_good):
 
 
 def main():
-    records = polylidar_timings(reps=3, n_val=n_val_good_giant)
+    records = polylidar_timings(reps=3, n_val=n_medium_only)
     df = pd.DataFrame.from_records(records)
     df = df[['n', 'delaunay', 'region', 'polygon']]
-    df.to_csv("./analysis/polylidar_complexity.csv", index=False)
+    df.to_csv("./analysis/polylidar_complexity_reformed.csv", index=False)
 
 
 if __name__ == "__main__":

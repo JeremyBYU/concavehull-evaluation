@@ -1,7 +1,6 @@
 #!/bin/bash
-# The interpreter used to execute the script
-
-#“#SBATCH” directives that convey submission options:
+# This script is meant to be executed on UMICH Great Lakes Super Computer Cluster
+# It is there to measure timings of the Polylidar Algorithm
 
 #SBATCH --job-name=polylidar_complexity
 #SBATCH --mail-type=BEGIN,END

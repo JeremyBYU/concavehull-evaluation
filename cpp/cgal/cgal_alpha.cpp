@@ -86,14 +86,12 @@ bool file_input(std::list<Point> &points, std::string file_path)
   return true;
 }
 
-// Reads a list of points and returns a list of segments
-// corresponding to the Alpha shape.
 std::vector<double> calculate_alpha_shape(std::list<Point> &points, std::vector<Segment> &segments, double alpha=1.0, int n=1)
 {
   std::vector<double> time_list;
   // This loop repetitively calls alpha shape to time it
   // Note that CGAL returns only an unordered set of edges (we filter for only boundary edges)
-  // It does not return a multi polygon with holes, which is what we desire.
+  // It does not return a (multi)polygon with holes, which is what we desire.
   for (int i = 0; i< n; i++)
   {
     std::vector<Segment> segments_temp;
@@ -109,6 +107,7 @@ std::vector<double> calculate_alpha_shape(std::list<Point> &points, std::vector<
     time_list.push_back(time_taken);
   }
   // Here we actually push back the alpha shape to segments vector for later use
+  // this is not timed
   Alpha_shape_2 A(points.begin(), points.end(),
                   FT(alpha),
                   Alpha_shape_2::GENERAL);
@@ -117,8 +116,11 @@ std::vector<double> calculate_alpha_shape(std::list<Point> &points, std::vector<
   return time_list;
 }
 
+// This function will read a list of points and compute the alpha shape
 int main(int argc, char* argv[])
 {
+  // Parse arguments
+  // file_path, output_edge_file, alpha, n=samples
   std::vector<std::string> argList(argv, argv + argc);
   if (argList.size() < 4) {
     std::cerr << "Incorrect number of arguments. Need input file, output file, alpha, n (optional)" << std::endl;
@@ -137,9 +139,9 @@ int main(int argc, char* argv[])
   // Get alpha shape, record unordered line segments; record time for n iterations
   std::vector<Segment> segments;
   auto time_list = calculate_alpha_shape(points, segments, alpha, n);
-  // Write the alpha shape edges to a file
+  // Write the alpha shape edges to a file, will be read later for futher analysis
   write_edges(out_file_name, segments);
-  // Output the timings to stdout, captured by launching process
+  // Output the timings (length n) to stdout, captured by launching process
   std::cout << time_list << std::endl;
 
   return 0;
