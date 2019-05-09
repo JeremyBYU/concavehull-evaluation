@@ -54,8 +54,32 @@ concave evaluate --help
 
 First you need to generate the data (or download it optionally) using the following script.
 
+#### Scale and normalize a projected polygon
 
-`concave generate-fixtures`
+```bash
+concave scale --help
+# Example
+concave scale -i test_fixtures/unprocessed/ca_mercator.geojson -o test_fixtures/gt_shapes/ca.geojson
+```
+
+#### Generate holes inside a polygon
+
+```bash
+concave holes --help
+# Example
+concave holes -i test_fixtures/gt_shapes/ca.geojson -o test_fixtures/gt_shapes/caholes.geojson
+```
+
+
+#### Generate Points inside a polygon
+
+```bash
+concave points --help
+# Example
+concave points -i test_fixtures/gt_shapes/ca.geojson -o test_fixtures/gt_shapes/caholes.geojson
+```
+
+1. Generate points for a shape - `concave `
 
 
 ### Note on Timings

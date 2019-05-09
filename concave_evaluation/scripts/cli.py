@@ -91,7 +91,7 @@ def holes(input_file, output_file, number_holes, hole_radius, plot):
 @click.option('-i', '--input-file', type=click.Path(exists=True), default=DEFAULT_SHAPE_FILE)
 # @click.option('-pd', '--point-densities', cls=PythonLiteralOption, default="[0.1, 0.5, 1.0, 1.5, 2.0]", required=False,
 #               show_default=True, help="Point Density to Generate of Polygon.")
-@click.option('-np', '--number-points', cls=PythonLiteralOption, default="[2000, 4000, 8000, 16000, 32000, 64000, 128000]", required=False,
+@click.option('-np', '--number-points', cls=PythonLiteralOption, default="[2000, 4000, 8000, 16000, 32000, 64000]", required=False,
               show_default=True, help="Number of points in polygon")           
 @click.option('-d', '--distribution', type=click.Choice(['uniform']), default='uniform')
 @click.option('-sd', '--save-directory', type=click.Path(exists=True), default='test_fixtures/points')
