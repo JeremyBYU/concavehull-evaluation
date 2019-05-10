@@ -5,6 +5,7 @@ test_fixtures/points
 assets/qgis/*.qgz
 *.pdf
 *.csv
+*.prof
 
 archive
 scratch
