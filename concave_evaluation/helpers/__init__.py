@@ -94,7 +94,7 @@ def plot_poly(polygon, ax, color='green', plot_holes=False, **kwargs):
     for geom in geoms:
         plot_poly_(geom, ax, plot_holes=plot_holes, color=color, **kwargs)
 
-def plot_poly_(polygon, ax, color='green', plot_holes=False, fill=False, **kwargs):
+def plot_poly_(polygon, ax, color='green', plot_holes=False, fill=False, hole_color='orange', **kwargs):
     poly_outline = Polygon(polygon.exterior.coords)
     outlinePatch = PolygonPatch(
         poly_outline, ec=color, fill=fill, fc=color, linewidth=2)
@@ -104,7 +104,7 @@ def plot_poly_(polygon, ax, color='green', plot_holes=False, fill=False, **kwarg
         for interior in polygon.interiors:
             poly_outline = Polygon(interior.coords)
             outlinePatch = PolygonPatch(
-                poly_outline, ec='orange', fill=False, linewidth=2)
+                poly_outline, ec=hole_color, fill=fill, linewidth=2)
             ax.add_patch(outlinePatch)
 
 
@@ -120,6 +120,10 @@ def plot_polygons(polygons, points_2D, ax, color='green'):
         #     outlinePatch = PolygonPatch(outline, ec='orange', fill=False, linewidth=2)
         #     ax.add_patch(outlinePatch)
 
+
+def scale_axes_poly(poly):
+    points = np.array(poly.exterior)
+    points[:, 0].min
 
 def scale_axes(xlim, ylim, *args):
     for ax in args:
