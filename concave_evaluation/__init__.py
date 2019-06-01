@@ -22,3 +22,6 @@ DEFAULT_SL_SAVE_DIR = join(DEFAULT_RESULTS_SAVE_DIR, 'spatialite')
 
 DEFAULT_PG_CONN = "dbname=concave user=concave password=concave host=localhost"
 DEFAULT_SPATIALITE_DB = ":memory:"
+
+
+DEFAULT_SAVED_RANDOM_POLYS =  join(TEST_FIXTURES_DIR, 'generated', 'polygons.pkl')

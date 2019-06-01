@@ -45,6 +45,14 @@ def measure_concavity(polygon):
     concavity = (concave_perimeter - convex_perimeter) / convex_perimeter
     return concavity
 
+def measure_convexity_simple(polygon):
+    convex_hull = polygon.convex_hull
+    convex_perimeter = convex_hull.area
+    concave_perimeter = polygon.area
+
+    convexity = polygon.area / convex_hull.area
+    return convexity
+
 
 def fake_building(x_dim=[0, 10, 1], y_dim=[0,10, 1], build_arm=True, holes=[]):
     box_base = box(x_dim[0], y_dim[0], x_dim[1], y_dim[1])
@@ -358,7 +366,9 @@ def lines_to_polygon(list_lines, buffer_amt=0.01):
     """Converts a list of line strings into a polygon
     Its importnat to note that this is __one__ way to convert the edges
     returned by CGAL into a polygon. This method only works for a single connected region.
-    It will sometimes fail on disconnected regions
+    It will sometimes fail on disconnected regions. The results of this method are NOT
+    used to time CGAL or even to evaluate its accuracy. It was merely used to validate that the shape
+    returned by CGAL alpha shape is identical to the polygon returned by Polylidar (when using sample alpha)
 
     Arguments:
         list_lines {List[LineStrings]} -- A list of shapely line strings
