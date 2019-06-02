@@ -29,7 +29,7 @@ from concave_evaluation import DEFAULT_SHAPE_FILE, DEFAULT_SAVED_RANDOM_POLYS
 from concave_evaluation.helpers import (round_dict, measure_concavity, PythonLiteralOption, plot_poly_make_fig,
                                         get_max_bounds_polys, plot_poly, scale_axes, load_polygon, measure_convexity_simple)
 from concave_evaluation.test_generation.polygen import generatePolygon
-from concave_evaluation.test_generation import random_points_within_mp, scale_poly, holes_poly, random_points_within, random_points_in_polygon_smarter
+from concave_evaluation.test_generation import random_points_within_mp, scale_poly, holes_poly, random_points_within
 from concave_evaluation.scripts.testrunner import evaluate
 
 logger = logging.getLogger("Concave")
@@ -197,7 +197,7 @@ def seed_np():
 @click.option('-i', '--input-file', type=click.Path(exists=True), default=DEFAULT_SAVED_RANDOM_POLYS)
 # @click.option('-pd', '--point-densities', cls=PythonLiteralOption, default="[0.1, 0.5, 1.0, 1.5, 2.0]", required=False,
 #               show_default=True, help="Point Density to Generate of Polygon.")
-@click.option('-np', '--number-points', cls=PythonLiteralOption, default="[8000]", required=False,
+@click.option('-np', '--number-points', cls=PythonLiteralOption, default="[2000]", required=False,
               show_default=True, help="Number of points in polygon")           
 @click.option('-d', '--distribution', type=click.Choice(['uniform']), default='uniform')
 @click.option('-sd', '--save-directory', type=click.Path(exists=True), default='test_fixtures/points')
@@ -209,7 +209,7 @@ def points_pkl(input_file, number_points, distribution, save_directory, plot):
     polys, poly_params = pickle.load(open(input_file, 'rb'))
     fname = Path(input_file).stem
     records = []
-    # polys = polys[:100]
+    # polys = polys[:2]
     num_polys = len(polys)
 
     for num_points in number_points:

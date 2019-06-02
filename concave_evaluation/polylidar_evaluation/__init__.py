@@ -72,20 +72,29 @@ def run_test(point_fpath, save_dir=DEFAULT_PL_SAVE_DIR, n=1, alpha=0.0, xyThresh
     # Choose alpha parameter or xyThresh
     if alpha > 0:
         xyThresh = 0.0
-    points = np.loadtxt(point_fpath)
+    # If we already passed in a numpy array, no need to load from file
+    if isinstance(point_fpath, np.ndarray):
+        points = point_fpath
+    else:
+        points = np.loadtxt(point_fpath)
     time_ms = []
     for i in range(n):
         polygons, ms = get_polygon(
             points, alpha=alpha, xyThresh=xyThresh, **kwargs)
         time_ms.append(ms)
 
-    save_fname, _ = modified_fname(point_fpath, save_dir)
     if save_poly:
+        save_fname, _ = modified_fname(point_fpath, save_dir)
         save_shapely(polygons, save_fname, alg='polylidar')
     
     l2_norm = np.NaN
-    if gt_fpath:
+    # Evaluate L2 Norm if we have the ground truth data
+    # if the path is a string (nominal) then load the polygon
+    if isinstance(gt_fpath, str):
         gt_shape, _ = load_polygon(gt_fpath)
+        l2_norm = evaluate_l2(gt_shape, polygons)
+    elif gt_fpath is not None:
+        gt_shape = gt_fpath
         l2_norm = evaluate_l2(gt_shape, polygons)
 
     return polygons, time_ms, l2_norm

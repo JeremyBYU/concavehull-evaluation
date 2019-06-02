@@ -58,24 +58,24 @@ from shapely.affinity import affine_transform
 from shapely.geometry import Point, Polygon
 from shapely.ops import triangulate
 
-def random_points_in_polygon_smarter(poly, num_points=2000, min_distance=0.0, seed=1):
-    "Return list of k points chosen uniformly at random inside the polygon."
-    areas = []
-    transforms = []
-    for t in triangulate(poly):
-        areas.append(t.area)
-        (x0, y0), (x1, y1), (x2, y2), _ = t.exterior.coords
-        transforms.append([x1 - x0, x2 - x0, y2 - y0, y1 - y0, x0, y0])
-    points = []
-    for transform in random.choices(transforms, weights=areas, k=k):
-        x, y = [random.random() for _ in range(2)]
-        if x + y > 1:
-            p = Point(1 - x, 1 - y)
-        else:
-            p = Point(x, y)
-        point = affine_transform(p, transform)
-        points.append([point.x, point.y])
-    return np.array(points)
+# def random_points_in_polygon_smarter(poly, num_points=2000, min_distance=0.0, seed=1):
+#     "Return list of num_points points chosen uniformly at random inside the polygon."
+#     areas = []
+#     transforms = []
+#     for t in triangulate(poly):
+#         areas.append(t.area)
+#         (x0, y0), (x1, y1), (x2, y2), _ = t.exterior.coords
+#         transforms.append([x1 - x0, x2 - x0, y2 - y0, y1 - y0, x0, y0])
+#     points = []
+#     for transform in random.choices(transforms, weights=areas, k=num_points):
+#         x, y = [random.random() for _ in range(2)]
+#         if x + y > 1:
+#             p = Point(1 - x, 1 - y)
+#         else:
+#             p = Point(x, y)
+#         point = affine_transform(p, transform)
+#         points.append([point.x, point.y])
+#     return np.array(points)
 
 def scale_poly(poly, max_size=200):
     bounds = poly.bounds

@@ -4,14 +4,17 @@ import json
 from pathlib import Path
 from os import listdir, path
 import math
+import pickle
 import click
 import pandas as pd
 import numpy as np
 import logging
+from tqdm import tqdm
 
 # All the algorithmic implementations for generating a concave shape from a point set
-from concave_evaluation import (DEFAULT_PG_CONN, DEFAULT_SPATIALITE_DB, DEFAULT_TEST_FILE,
-                                DEFAULT_PG_SAVE_DIR, DEFAULT_PL_SAVE_DIR, DEFAULT_SL_SAVE_DIR, DEFAULT_CGAL_SAVE_DIR)
+from concave_evaluation import (DEFAULT_PG_CONN, DEFAULT_SPATIALITE_DB, DEFAULT_TEST_FILE, DEFAULT_RESULTS_SAVE_DIR,
+                                DEFAULT_PG_SAVE_DIR, DEFAULT_PL_SAVE_DIR, DEFAULT_SL_SAVE_DIR, DEFAULT_CGAL_SAVE_DIR,
+                                GENERATED_DIR, POINTS_DIR)
 from concave_evaluation.polylidar_evaluation import run_test as run_test_polylidar
 from concave_evaluation.cgal_evaluation import run_test as run_test_cgal
 from concave_evaluation.spatialite_evaluation import run_test as run_test_spatialite
@@ -25,7 +28,7 @@ logger = logging.getLogger("Concave")
 def evaluate():
     """Evaluates conave hull implementations"""
     pass
-
+  
 
 @evaluate.command()
 @click.option('-i', '--input-file', type=click.Path(exists=True), default=DEFAULT_TEST_FILE)
@@ -179,6 +182,63 @@ def run_tests(point_fpath, config):
                                       num_points, l2_norm, alg='spatialite'))
     return records
 
+
+@evaluate.command()
+def polylidar_montecarlo():
+    """Runs montecarlo sims on polylidar.  All options are hardcoded"""
+    polys_fpath = path.join(GENERATED_DIR, "polygons.pkl")
+    polys_holes_fpath = path.join(GENERATED_DIR, "polygons_holes.pkl")
+
+    points_list = [path.join(POINTS_DIR, "polygons_2000.pkl"), path.join(POINTS_DIR, "polygons_8000.pkl"),
+                    path.join(POINTS_DIR, "polygons_holes_2000.pkl"), path.join(POINTS_DIR, "polygons_holes_8000.pkl") ]
+    poly_list = [polys_fpath, polys_fpath, polys_holes_fpath, polys_holes_fpath]
+
+    save_path = path.join(DEFAULT_RESULTS_SAVE_DIR, "polylidar_montecarlo.csv")
+
+    total_execs = int(9800 * 4)
+    all_records = []
+
+    with tqdm(total=total_execs) as pbar:
+        for points, polys in zip(points_list, poly_list):
+            # print(points, polys)
+            records_ = run_montecarlo(points, polys, pbar=pbar)
+            all_records.extend(records_)
+
+    df = pd.DataFrame.from_records(all_records)
+    df.to_csv(save_path, index=False)
+
+def run_montecarlo(points_dict_fpath, polygon_fpath, pbar=None):
+    poly_list, poly_params = pickle.load(open(polygon_fpath, 'rb'))
+    points_dict = pickle.load(open(points_dict_fpath, 'rb'))
+
+    records = []
+
+    polylidar_kwargs = dict(n=1, save_poly=False)
+    for i, (poly, point_dict) in enumerate(zip(poly_list, points_dict)):
+        points = point_dict['points']
+        num_points = points.shape[0]
+        point_density = poly.area / num_points
+        alpha = math.sqrt(point_density) * 2
+        polylidar_kwargs.update(dict(alpha=alpha, gt_fpath=poly))
+
+        # logger.info("Running Polylidar")
+        concave_poly, timings, l2_norm = run_test_polylidar(points, **polylidar_kwargs)
+        timings = np.array(timings)
+        timings_section = np.sum(timings, axis=1)
+
+        has_hole = 'hole' in polygon_fpath
+        is_valid = concave_poly.is_valid
+        if not is_valid:
+            logger.error("Invalid Polygon!!! At %r in %r", i, points_dict_fpath)
+
+        record = dict(alg='polylidar', points=num_points, l2_norm=l2_norm, time=timings_section[0], convexity=point_dict['poly_param']['convexity'],
+            holes=has_hole, section='all', poly_param=point_dict['poly_param'], is_valid=concave_poly.is_valid)
+        records.append(record)
+
+        if pbar:
+            pbar.update(1)
+
+    return records
 
 def run_as_config(config_file):
     with open(config_file) as f:
