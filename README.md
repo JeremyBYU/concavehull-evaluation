@@ -12,7 +12,7 @@ This repository will contain all code for evaluating several concave hull algori
 
 Only linux is officially supported for simplicity. However the code should mostly be portable. The following main dependencies are required to install.
 
-1. Miniconda/Conda Python 3.6 - Get it [here](https://docs.conda.io/en/latest/miniconda.html). 
+1. Miniconda/Conda Python 3.6 - Get it [here](https://docs.conda.io/en/latest/miniconda.html). `conda create --name concave python=3.6`
 2. C++ Compiler that can compile C++ 14.
 3. PostGIS 2.5.2 - Read PostGIS instruction below
 4. CGAL 4.12 - `conda install -c conda-forge cgal`
@@ -23,7 +23,7 @@ Finally install all other dependencies used for analysis: `pip install -e .`
 
 Make instruction for cpp code.
 
-1. `export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/jeremy/miniconda/envs/concave/lib`
+1. `export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:PATH_TO_YOUR_CONDA_ENV/concave/lib`
 2. `cd cpp/cgal && make`
 
 ### PostGIS instructions
