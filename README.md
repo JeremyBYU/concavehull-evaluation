@@ -17,7 +17,7 @@ Only linux is officially supported for simplicity. However the code should mostl
 3. PostGIS 2.5.2 - Read PostGIS instruction below
 4. CGAL 4.12 - `conda install -c conda-forge cgal`
 5. Spatialite - `conda install -c conda-forge libspatialite`
-6. Polyidar - `pip install polylidar.whl` - Install from here
+6. Polyidar - `pip install polylidar.whl` - Install from [here](https://github.com/JeremyBYU/polylidarv2)
 
 Finally install all other dependencies used for analysis: `pip install -e .`
 
