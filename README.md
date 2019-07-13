@@ -52,7 +52,7 @@ concave evaluate --help
 
 ### Generate Data
 
-First you need to generate the data (or download it optionally) using the following script.
+First you need to generate the data (or download it optionally) using the following script. I recommend downloading all the data from this public link here: [test_fixtures](https://drive.google.com/open?id=1ItDcc1l2I4ONbqR2NavCSLncYnYRRTW1). Download and unzip the test_fixtures folder into this repository.
 
 #### Scale and normalize a projected polygon
 
@@ -80,6 +80,31 @@ concave points -i test_fixtures/gt_shapes/ca.geojson -o test_fixtures/gt_shapes/
 ```
 
 1. Generate points for a shape - `concave `
+
+### Run Benchmarks
+
+You can run ``concave evaluate --help`` to view available commands:
+
+```
+Usage: concave evaluate [OPTIONS] COMMAND [ARGS]...
+
+  Evaluates concave hull implementations
+
+Options:
+  --help  Show this message and exit.  [default: False]
+
+Commands:
+  all                   Evaluates all conave hull implementation algorithms
+  cgal                  Runs cgal on input point file
+  polylidar             Runs polylidar on input point file
+  polylidar-montecarlo  Runs montecarlo sims on polylidar.
+  postgis               Runs postgis on input point file
+  spatialite            Runs spatialite on input point file
+
+```
+
+To run all benchmarks against all implementations run ``concave evaluate all -cf test_fixtures/config.json``.
+This will take a while.
 
 
 ### Note on Timings

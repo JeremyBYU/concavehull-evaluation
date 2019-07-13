@@ -3,9 +3,11 @@ test_fixtures/points
 *.mp4
 *.html
 assets/qgis/*.qgz
+assets/pics/*.png
 *.pdf
 *.csv
 *.prof
+*.zip
 
 archive
 scratch
