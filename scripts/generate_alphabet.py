@@ -43,6 +43,7 @@ def main(scale=200, points=4000):
             print("Invalid Polygon!")
         poly_letters.append(poly)
         poly_params.append(dict(name=letter))
+        # print(poly.geometryType())
     print(len(poly_letters))
     pickle.dump((poly_letters, poly_params), open(os.path.join(ALPH_DIR, 'polygons.pkl'), "wb"))
     
