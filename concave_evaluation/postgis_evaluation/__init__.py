@@ -5,7 +5,7 @@ import sqlite3
 import sys
 
 import numpy as np
-from shapely.geometry import asMultiPoint, asPoint
+from shapely.geometry import asMultiPoint, asPoint, MultiPolygon
 from shapely.wkb import dumps, loads
 import psycopg2
 import psycopg2.extras
@@ -51,12 +51,16 @@ def extract_concave_hull(connection, test_name, n=1, target_percent=1.0):
     timings = []
     with connection.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
         for i in range(n):
-            t0 = time.time()
-            cursor.execute(query, (target_percent, test_name))
-            result = cursor.fetchone()
-            t1 = time.time()
-            time_ms = (t1 - t0) * 1000
-            timings.append(time_ms)
+            try:
+                t0 = time.time()
+                cursor.execute(query, (target_percent, test_name))
+                result = cursor.fetchone()
+                t1 = time.time()
+                time_ms = (t1 - t0) * 1000
+                timings.append(time_ms)
+            except Exception as e:
+                print("POSTGIS error", e)
+                return None, [np.NaN]
     # load the actual polygon into a shapely geometry, not timed
     # print("Size of Polygon:", sys.getsizeof(result['polygon']))
     final_geometry = loads(result['polygon'], hex=True)
@@ -83,7 +87,11 @@ class DBConnPostGIS(object):
 
 def run_test(point_fpath, save_dir=DEFAULT_PG_SAVE_DIR, db_path=DEFAULT_PG_CONN, n=1,
              target_percent=0.90, save_poly=True, gt_fpath=None, **kwargs):
-    points = np.loadtxt(point_fpath)
+    if isinstance(point_fpath, np.ndarray):
+        points = point_fpath
+        point_fpath = path.join(save_dir, 'temp_points.csv')
+    else:
+        points = np.loadtxt(point_fpath)
     db = DBConnPostGIS(db_path)
 
     save_fname, test_name = modified_fname(point_fpath, save_dir)
@@ -95,8 +103,15 @@ def run_test(point_fpath, save_dir=DEFAULT_PG_SAVE_DIR, db_path=DEFAULT_PG_CONN,
         save_shapely(polygon, save_fname, alg='postgis')
 
     l2_norm = np.NaN
-    if gt_fpath:
-        gt_shape, _ = load_polygon(gt_fpath)
-        l2_norm = evaluate_l2(gt_shape, polygon)
+
+    if polygon is not None:
+        # Evaluate L2 Norm if we have the ground truth data
+        # if the path is a string (nominal) then load the polygon
+        if isinstance(gt_fpath, str):
+            gt_shape, _ = load_polygon(gt_fpath)
+            l2_norm = evaluate_l2(gt_shape, polygon)
+        elif gt_fpath is not None:
+            gt_shape = gt_fpath
+            l2_norm = evaluate_l2(gt_shape, polygon)
 
     return polygon, timings, l2_norm

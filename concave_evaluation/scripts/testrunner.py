@@ -14,12 +14,13 @@ from tqdm import tqdm
 # All the algorithmic implementations for generating a concave shape from a point set
 from concave_evaluation import (DEFAULT_PG_CONN, DEFAULT_SPATIALITE_DB, DEFAULT_TEST_FILE, DEFAULT_RESULTS_SAVE_DIR,
                                 DEFAULT_PG_SAVE_DIR, DEFAULT_PL_SAVE_DIR, DEFAULT_SL_SAVE_DIR, DEFAULT_CGAL_SAVE_DIR,
-                                GENERATED_DIR, POINTS_DIR)
+                                GENERATED_DIR, POINTS_DIR, ALPHABET_DIR)
 from concave_evaluation.polylidar_evaluation import run_test as run_test_polylidar
 from concave_evaluation.cgal_evaluation import run_test as run_test_cgal
 from concave_evaluation.spatialite_evaluation import run_test as run_test_spatialite
 from concave_evaluation.postgis_evaluation import run_test as run_test_postgis
 from concave_evaluation.helpers import load_polygon
+from concave_evaluation.helpers import measure_convexity_simple
 
 logger = logging.getLogger("Concave")
 
@@ -97,16 +98,22 @@ def all(ctx, config_file, input_file, number_iter):
         ctx.forward(postgis)
 
 
-def create_records(timings, shape_name, num_points, l2_norm, alg='polylidar', section='all'):
+def create_records(timings, shape_name, num_points, l2_norm, alg='polylidar', section='all', has_hole=False, **kwargs):
     records = []
-    has_hole = 'hole' in shape_name
+    # backwards compatability to previous function, if only 1 timing for this poly, integrate timing and accuracy into one record
+    if len(timings) ==1:
+        records.append(dict(alg=alg, shape=shape_name, points=num_points,
+                        l2_norm=l2_norm, time=timings[0], holes=has_hole, section=section, **kwargs))
+        return records
+    
     for time in timings:
         records.append(dict(alg=alg, shape=shape_name, points=num_points,
-                            l2_norm=np.NaN, time=time, holes=has_hole, section=section))
+                            l2_norm=np.NaN, time=time, holes=has_hole, section=section, **kwargs))
 
     if section == 'all':
         records.append(dict(alg=alg, shape=shape_name, points=num_points,
-                            l2_norm=l2_norm, time=np.NaN, holes=has_hole, section=section))
+                            l2_norm=l2_norm, time=np.NaN, holes=has_hole, section=section, **kwargs))
+
 
     return records
 
@@ -148,6 +155,8 @@ def run_tests(point_fpath, config):
     cgal_kwargs['alpha'] = alpha ** 2
     polylidar_kwargs['alpha'] = alpha
 
+    has_hole = len(gt_shape.interiors) > 0
+
     # Polylidar Timings, has more fine grain timings provided
     if 'polylidar' in config['algs']:
         _, timings, l2_norm = run_test_polylidar(
@@ -160,26 +169,26 @@ def run_tests(point_fpath, config):
             else:
                 timings_section = timings[:, i]
             records.extend(create_records(timings_section, shape_name,
-                                          num_points, l2_norm, alg='polylidar', section=section))
+                                          num_points, l2_norm, alg='polylidar', section=section, holes=has_hole))
     # CGAL Timings
     if 'cgal' in config['algs']:
         logger.info("Running CGAL")
         _, timings, l2_norm = run_test_cgal(point_fpath, **cgal_kwargs)
         records.extend(create_records(timings, shape_name,
-                                      num_points, l2_norm, alg='cgal'))
+                                      num_points, l2_norm, alg='cgal', holes=has_hole))
     # PostGIS Timings
     if 'postgis' in config['algs']:
         logger.info("Running PostGIS")
         _, timings, l2_norm = run_test_postgis(point_fpath, **postgis_kwargs)
         records.extend(create_records(timings, shape_name,
-                                      num_points, l2_norm, alg='postgis'))
+                                      num_points, l2_norm, alg='postgis', holes=has_hole))
     # Spatialite Timings
     if 'spatialite' in config['algs']:
         logger.info("Running Spatialite")
         _, timings, l2_norm = run_test_spatialite(
             point_fpath, **spatialite_kwargs)
         records.extend(create_records(timings, shape_name,
-                                      num_points, l2_norm, alg='spatialite'))
+                                      num_points, l2_norm, alg='spatialite', holes=has_hole))
     return records
 
 
@@ -201,42 +210,118 @@ def polylidar_montecarlo():
     with tqdm(total=total_execs) as pbar:
         for points, polys in zip(points_list, poly_list):
             # print(points, polys)
-            records_ = run_montecarlo(points, polys, pbar=pbar)
+            records_ = run_montecarlo(points, polys, algs=['polylidar'], pbar=pbar)
             all_records.extend(records_)
 
     df = pd.DataFrame.from_records(all_records)
     df.to_csv(save_path, index=False)
 
-def run_montecarlo(points_dict_fpath, polygon_fpath, pbar=None):
+@evaluate.command()
+def alphabet():
+    """Evaluates all algorithms on an alphabet set.  Saves results in results/alphabets_results.csv"""
+    points_list = [path.join(ALPHABET_DIR, "polygons_2000.pkl") ]
+    poly_list = [path.join(ALPHABET_DIR, "polygons.pkl")]
+
+    save_path = path.join(DEFAULT_RESULTS_SAVE_DIR, "alphabet_results.csv")
+
+    total_execs = int(26)
+    all_records = []
+
+    with tqdm(total=total_execs) as pbar:
+        for points, polys in zip(points_list, poly_list):
+            # print(points, polys)
+            records_ = run_montecarlo(points, polys, pbar=pbar)
+            all_records.extend(records_)
+
+    df = pd.DataFrame.from_records(all_records)
+    df.to_csv(save_path, index=False)
+    print(df)
+
+
+
+def setup_run_polylidar(poly, shape_name, has_hole, convexity, points, num_points, run_kwargs):
+    polylidar_kwargs = dict(**run_kwargs)
+    point_density = poly.area / num_points
+    alpha = math.sqrt(point_density) * 2
+    polylidar_kwargs.update(dict(alpha=alpha, gt_fpath=poly))
+
+    # logger.info("Running Polylidar")
+    concave_poly, timings, l2_norm = run_test_polylidar(points, **polylidar_kwargs)
+    is_valid = concave_poly.is_valid
+    convexity = measure_convexity_simple(poly)
+    timings = np.array(timings)
+    timings_section = np.sum(timings, axis=1)
+
+    return create_records(timings_section, shape_name, num_points, l2_norm, 'polylidar', 'all', has_hole=has_hole, convexity=convexity)
+
+
+def setup_run_cgal(poly, shape_name, has_hole, convexity, points, num_points, run_kwargs):
+    kwargs = dict(**run_kwargs)
+    point_density = poly.area / num_points
+    alpha = math.sqrt(point_density) * 2
+    alpha = alpha ** 2
+    kwargs.update(dict(alpha=alpha, gt_fpath=poly))
+
+    # logger.info("Running Polylidar")
+    concave_poly, timings, l2_norm = run_test_cgal(points, **kwargs)
+    is_valid = concave_poly.is_valid
+
+    return create_records(timings, shape_name, num_points, l2_norm, 'cgal', 'all', has_hole=has_hole, convexity=convexity)
+
+def setup_run_spatialite(poly, shape_name, has_hole, convexity, points, num_points, run_kwargs):
+    kwargs = dict(**run_kwargs)
+    kwargs.update(dict(factor=3.0, gt_fpath=poly))
+
+    # logger.info("Running Polylidar")
+    concave_poly, timings, l2_norm = run_test_spatialite(points, **kwargs)
+    is_valid = concave_poly.is_valid
+
+    return create_records(timings, shape_name, num_points, l2_norm, 'spatialite', 'all', has_hole=has_hole, convexity=convexity)
+
+def setup_run_postgis(poly, shape_name, has_hole, convexity, points, num_points, run_kwargs):
+    kwargs = dict(**run_kwargs)
+    target_percent = poly.area / poly.convex_hull.area
+    kwargs.update(dict(target_percent=target_percent, gt_fpath=poly))
+
+    # logger.info("Running Polylidar")
+    concave_poly, timings, l2_norm = run_test_postgis(points, **kwargs)
+    is_valid = concave_poly.is_valid if concave_poly is not None else False
+
+    return create_records(timings, shape_name, num_points, l2_norm, 'postgis', 'all', has_hole=has_hole, convexity=convexity)
+
+
+
+def run_montecarlo(points_dict_fpath, polygon_fpath, algs=['polylidar', 'cgal', 'spatialite', 'postgis'], pbar=None):
     poly_list, poly_params = pickle.load(open(polygon_fpath, 'rb'))
     points_dict = pickle.load(open(points_dict_fpath, 'rb'))
 
     records = []
 
-    polylidar_kwargs = dict(n=1, save_poly=False)
+    run_kwargs = dict(n=1, save_poly=False)
     for i, (poly, point_dict) in enumerate(zip(poly_list, points_dict)):
         points = point_dict['points']
         num_points = points.shape[0]
-        point_density = poly.area / num_points
-        alpha = math.sqrt(point_density) * 2
-        polylidar_kwargs.update(dict(alpha=alpha, gt_fpath=poly))
-
-        # logger.info("Running Polylidar")
-        concave_poly, timings, l2_norm = run_test_polylidar(points, **polylidar_kwargs)
-        timings = np.array(timings)
-        timings_section = np.sum(timings, axis=1)
-
-        has_hole = 'hole' in polygon_fpath
-        is_valid = concave_poly.is_valid
-        if not is_valid:
-            logger.error("Invalid Polygon!!! At %r in %r", i, points_dict_fpath)
-
-        record = dict(alg='polylidar', points=num_points, l2_norm=l2_norm, time=timings_section[0], convexity=point_dict['poly_param']['convexity'],
-            holes=has_hole, section='all', poly_param=point_dict['poly_param'], is_valid=concave_poly.is_valid)
-        records.append(record)
+        poly_name = point_dict.get('poly_param').get('name') if point_dict.get('poly_param').get('name') else str(i)
+        has_hole = len(poly.interiors) > 0
+        convexity = measure_convexity_simple(poly)
+        if 'polylidar' in algs:
+            record = setup_run_polylidar(poly, poly_name, has_hole, convexity, points, num_points, run_kwargs)
+            records.extend(record)
+        if 'cgal' in algs:
+            record = setup_run_cgal(poly, poly_name, has_hole, convexity, points, num_points, run_kwargs)
+            records.extend(record)
+        if 'spatialite' in algs:
+            record = setup_run_spatialite(poly, poly_name, has_hole, convexity, points, num_points, run_kwargs)
+            records.extend(record)
+        if 'postgis' in algs:
+            record = setup_run_postgis(poly, poly_name, has_hole, convexity, points, num_points, run_kwargs)
+            records.extend(record)
 
         if pbar:
             pbar.update(1)
+
+        # if i > 1:
+        #     break;
 
     return records
 

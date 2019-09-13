@@ -27,3 +27,5 @@ DEFAULT_SPATIALITE_DB = ":memory:"
 
 
 DEFAULT_SAVED_RANDOM_POLYS =  join(TEST_FIXTURES_DIR, 'generated', 'polygons.pkl')
+
+ALPHABET_DIR = join(TEST_FIXTURES_DIR, 'alphabet')

@@ -71,7 +71,11 @@ class DBConn(object):
 
 def run_test(point_fpath, save_dir=DEFAULT_SL_SAVE_DIR, db_path=DEFAULT_SPATIALITE_DB, n=1,
              factor=3.0, save_poly=True, gt_fpath=None, **kwargs):
-    points = np.loadtxt(point_fpath)
+    if isinstance(point_fpath, np.ndarray):
+        points = point_fpath
+        point_fpath = path.join(save_dir, 'temp_points.csv')
+    else:
+        points = np.loadtxt(point_fpath)
     db = DBConn(db_path, use_row=True)
 
     save_fname, test_name = modified_fname(point_fpath, save_dir)
@@ -83,8 +87,13 @@ def run_test(point_fpath, save_dir=DEFAULT_SL_SAVE_DIR, db_path=DEFAULT_SPATIALI
         save_shapely(polygon, save_fname, alg='spatialite')
 
     l2_norm = np.NaN
-    if gt_fpath:
+    # Evaluate L2 Norm if we have the ground truth data
+    # if the path is a string (nominal) then load the polygon
+    if isinstance(gt_fpath, str):
         gt_shape, _ = load_polygon(gt_fpath)
+        l2_norm = evaluate_l2(gt_shape, polygon)
+    elif gt_fpath is not None:
+        gt_shape = gt_fpath
         l2_norm = evaluate_l2(gt_shape, polygon)
 
     return polygon, timings, l2_norm

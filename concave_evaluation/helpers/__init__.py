@@ -181,7 +181,7 @@ def get_poly_coords(outline, points, is_3D=False):
 def plot_line(ax, ob, color=GRAY, linewidth=3, index=-1):
     x, y = ob.xy
     ax.plot(x, y, color=color, linewidth=linewidth, solid_capstyle='round', zorder=1)
-    if index > 0:
+    if index and index > 0:
         ax.text(x[0], y[0], str(index))
 
 def plot_arrow(ax, ob, color=GRAY, scale_factor=1.0, offset=0.00, offset_side='right', index=None, center_text=True, fontsize=10, **kwargs):
