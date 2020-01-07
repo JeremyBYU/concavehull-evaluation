@@ -7,6 +7,17 @@ This repository will contain all code for evaluating several concave hull algori
 * Spatialite - ST_ConcaveHull
 * PostGIS - ST_ConcaveHull
 
+Two main benchmarks are provided which assess computation time and accuracy of shape reproduction:
+
+1. Varying size point clouds of U.S. State Shapes. See how algorithms scale with increasing number of points.
+2. Point clouds of the English Alphabet.
+
+Below is a sample of the timings results on the State Shape of California (CA). Point clouds of varying size are sampled inside the CA Polygon (green is exterior hull and orange are holes). The chart shows execution time (in ms) for each algorithm as the point set size increases. Solid lines denotes no holes in polygon while dashed lines represents holes were inserted (as seen in the first picture).
+
+<p align="middle">
+  <img src="https://raw.githubusercontent.com/JeremyBYU/pconcave-evaluation/master/assets/repo/ca_image.png" height="100%" /> 
+  <img src="https://raw.githubusercontent.com/JeremyBYU/pconcave-evaluation/master/assets/repo/ca_time.png" height="100%" /> 
+</p>
 
 ## Install Instructions
 
@@ -111,6 +122,10 @@ Commands:
 
 
 ### Note on Timings
+
+**Polylidar**
+
+We use robust geometric predicates when bulding polylidar. This makes comparision on par with these other alorithms which also include the ability (Spatialite[GEOS], CGAL). Note that *if* robust predicates is disabled a 30% speedup is achieved.
 
 **PostGIS**
 
