@@ -12,17 +12,17 @@ This repository will contain all code for evaluating several concave hull algori
 
 Only linux is officially supported for simplicity. However the code should mostly be portable. The following main dependencies are required to install.
 
-0. `git clone https://github.com/JeremyBYU/concavehull-evaluation.git && cd concavehull-evaluation`
+0. Clone this Repository - `git clone https://github.com/JeremyBYU/concavehull-evaluation.git && cd concavehull-evaluation`
 1. Miniconda/Conda Python 3.6 - Get it [here](https://docs.conda.io/en/latest/miniconda.html). `conda create --name concave python=3.6`
-2. C++ Compiler that can compile C++ 14.
+2. Install a C++ Compiler that can compile C++ 14.
 3. PostGIS 2.5.2 - Read PostGIS instruction below
-4. CGAL 4.12 - `conda install -c conda-forge cgal shapely`
+4. CGAL 4.12 - `conda install -c conda-forge cgal=4.12 shapely`
 5. Spatialite - `conda install -c conda-forge libspatialite`
-6. Polyidar - `cd thirdparty/polylidar && pip install -e ".[dev]" && cd ../..`
+6. Polyidar - `cd thirdparty/polylidar && export PL_USE_ROBUST_PREDICATES=1 && pip install -e ".[dev]" && cd ../..`
 
 Finally install all other dependencies used for analysis: `pip install -e .`
 
-Make instruction for cpp code.
+Make instruction for CGAL cpp code.
 
 1. `export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:PATH_TO_YOUR_CONDA_ENV/concave/lib`. For example `export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/miniconda3/envs/concave/lib`
 2. `cd cpp/cgal && make`
@@ -40,11 +40,12 @@ Instructions for option 2 are the following:
 2. Build Image - `cd docker; & docker build . -t jeremybyu/postgis-concave:latest; & cd .. ;`
 3. Launch Container - `docker run --name concave -p 5050:5050 -p 5432:5432 -v ${PWD}:/home/concave jeremybyu/postgis-concave:latest`
 4. View PGAdmin (Optional) - `docker exec -i -t concave bash -c 'python $PGADMIN/pgAdmin4.py'`
+5. Also need to install this package for python package `psycopg2`: `sudo apt-get install libpq-dev`
 
 
 ## Usage
 
-You have a nice CLI that you can use to launch the benchmarking and test dataset creation process.  See commands here:
+You have a CLI that you can use to launch the benchmarking and test dataset creation process.  See commands here:
 
 ```
 concave --help
@@ -95,17 +96,18 @@ Options:
   --help  Show this message and exit.  [default: False]
 
 Commands:
-  all                   Evaluates all conave hull implementation algorithms
+  all                   Evaluates all concave hull algorithms on state...
+  alphabet              Evaluates all algorithms on an alphabet set.
   cgal                  Runs cgal on input point file
   polylidar             Runs polylidar on input point file
   polylidar-montecarlo  Runs montecarlo sims on polylidar.
   postgis               Runs postgis on input point file
   spatialite            Runs spatialite on input point file
-
 ```
 
-To run all benchmarks against all implementations run ``concave evaluate all -cf test_fixtures/config.json``.
-This will take a while.
+1. State benchmarks - `concave evaluate all -cf test_fixtures/config.json`. This will take a while.
+2. Alphabet benchmarks - `concave evaluate alphabet`
+3. Monte Carlo Testing for polylidar - `concave evaluate polylidar-montecarlo`
 
 
 ### Note on Timings

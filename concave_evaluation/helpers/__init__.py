@@ -14,6 +14,14 @@ import matplotlib.pyplot as plt
 from shapely_geojson import dump, Feature
 
 logger = logging.getLogger("Concave")
+logger.setLevel(logging.INFO)
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+ch.setFormatter(formatter)
+
+# add ch to logger
+logger.addHandler(ch)
 
 BLUE = '#6699cc'
 GRAY = '#999999'

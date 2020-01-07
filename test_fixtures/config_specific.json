@@ -1,0 +1,74 @@
+{
+    "points_dir": "./test_fixtures/points",
+    "gt_dir": "./test_fixtures/gt_shapes",
+    "save_csv": "./test_fixtures/results/all_timings_polylidar_robust.csv",
+    "algs": [
+        "polylidar"
+    ],
+    "n_points": [
+        2000,
+        4000,
+        8000,
+        16000, 
+        32000,
+        64000
+    ],
+    "shapes": ["miglove", "migloveholes", "ca", "caholes", "hi", "hiholes"],
+    "common_alg_params": {
+        "n": 10,
+        "save_poly": true
+    },
+    "alg_params": {
+        "cgal": {
+            "alpha": 25.0
+        },
+        "polylidar": {
+            "alpha": 5.0,
+            "minTriangles": 1
+        },
+        "spatialite": {
+            "factor": 3.0
+        },
+        "postgis": {
+            "target_percent": 0.85
+        }
+    },
+    "tests": {
+        "miglove": {
+            "postgis": {
+                "target_percent": 0.85
+            }
+        },
+        "migloveholes": {
+            "postgis": {
+                "target_percent": 0.73
+            }
+        },
+        "ca": {
+            "spatialite": {
+                "factor": 2.0
+            },
+            "postgis": {
+                "target_percent": 0.76
+            }
+        },
+        "caholes": {
+            "spatialite": {
+                "factor": 2.0
+            },
+            "postgis": {
+                "target_percent": 0.72
+            }
+        },
+        "hi": {
+            "spatialite": {
+                "factor": 2.0
+            }
+        },
+        "hiholes": {
+            "spatialite": {
+                "factor": 1.25
+            }
+        }
+    }
+}

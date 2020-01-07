@@ -87,7 +87,7 @@ def postgis(input_file, save_directory, database, target_percent, number_iter):
 @click.option('-n', '--number-iter', default=1)
 @click.pass_context
 def all(ctx, config_file, input_file, number_iter):
-    """Evaluates all conave hull implementation algorithms"""
+    """Evaluates all concave hull algorithms on state shapes"""
     if config_file is not None:
         run_as_config(config_file)
 
@@ -155,7 +155,7 @@ def run_tests(point_fpath, config):
     cgal_kwargs['alpha'] = alpha ** 2
     polylidar_kwargs['alpha'] = alpha
 
-    has_hole = len(gt_shape.interiors) > 0
+    has_hole = 'holes' in point_fpath
 
     # Polylidar Timings, has more fine grain timings provided
     if 'polylidar' in config['algs']:
@@ -169,26 +169,26 @@ def run_tests(point_fpath, config):
             else:
                 timings_section = timings[:, i]
             records.extend(create_records(timings_section, shape_name,
-                                          num_points, l2_norm, alg='polylidar', section=section, holes=has_hole))
+                                          num_points, l2_norm, alg='polylidar', section=section, has_hole=has_hole))
     # CGAL Timings
     if 'cgal' in config['algs']:
         logger.info("Running CGAL")
         _, timings, l2_norm = run_test_cgal(point_fpath, **cgal_kwargs)
         records.extend(create_records(timings, shape_name,
-                                      num_points, l2_norm, alg='cgal', holes=has_hole))
+                                      num_points, l2_norm, alg='cgal', has_hole=has_hole))
     # PostGIS Timings
     if 'postgis' in config['algs']:
         logger.info("Running PostGIS")
         _, timings, l2_norm = run_test_postgis(point_fpath, **postgis_kwargs)
         records.extend(create_records(timings, shape_name,
-                                      num_points, l2_norm, alg='postgis', holes=has_hole))
+                                      num_points, l2_norm, alg='postgis', has_hole=has_hole))
     # Spatialite Timings
     if 'spatialite' in config['algs']:
         logger.info("Running Spatialite")
         _, timings, l2_norm = run_test_spatialite(
             point_fpath, **spatialite_kwargs)
         records.extend(create_records(timings, shape_name,
-                                      num_points, l2_norm, alg='spatialite', holes=has_hole))
+                                      num_points, l2_norm, alg='spatialite', has_hole=has_hole))
     return records
 
 
@@ -217,26 +217,27 @@ def polylidar_montecarlo():
     df.to_csv(save_path, index=False)
 
 @evaluate.command()
-def alphabet():
+@click.option('-po', '--polylidar-only', default=False, is_flag=True, required=False, help="Only Polylidar")
+def alphabet(polylidar_only):
     """Evaluates all algorithms on an alphabet set.  Saves results in results/alphabets_results.csv"""
     points_list = [path.join(ALPHABET_DIR, "polygons_2000.pkl") ]
     poly_list = [path.join(ALPHABET_DIR, "polygons.pkl")]
 
-    save_path = path.join(DEFAULT_RESULTS_SAVE_DIR, "alphabet_results.csv")
+    fname = "alphabet_results.csv" if not polylidar_only else "alphabet_results_robust.csv"
+    save_path = path.join(DEFAULT_RESULTS_SAVE_DIR, fname)
 
     total_execs = int(26)
     all_records = []
-
+    algs = ['polylidar', 'cgal', 'spatialite', 'postgis'] if not polylidar_only else ['polylidar']
     with tqdm(total=total_execs) as pbar:
         for points, polys in zip(points_list, poly_list):
             # print(points, polys)
-            records_ = run_montecarlo(points, polys, pbar=pbar)
+            records_ = run_montecarlo(points, polys, algs=algs, pbar=pbar)
             all_records.extend(records_)
 
     df = pd.DataFrame.from_records(all_records)
     df.to_csv(save_path, index=False)
     print(df)
-
 
 
 def setup_run_polylidar(poly, shape_name, has_hole, convexity, points, num_points, run_kwargs):

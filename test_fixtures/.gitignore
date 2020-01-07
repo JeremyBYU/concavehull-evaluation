@@ -2,3 +2,5 @@
 /*/
 !.gitignore
 !/gt_shapes/
+!config.json
+!config_specific.json
