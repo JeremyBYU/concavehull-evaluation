@@ -12,7 +12,7 @@ Two main benchmarks are provided which assess computation time and accuracy of s
 1. Varying size point clouds of U.S. State Shapes. See how algorithms scale with increasing number of points.
 2. Point clouds of the English Alphabet.
 
-Below is a sample of the timings results on the State Shape of California (CA). Point clouds of varying size are sampled inside the CA Polygon (green is exterior hull and orange are holes). The chart shows execution time (in ms) for each algorithm as the point set size increases. Solid lines denotes no holes in polygon while dashed lines represents holes were inserted (as seen in the first picture).
+Below is a sample of timing results on the State Shape of California (CA). Point clouds of varying size are sampled inside the CA Polygon (green is exterior hull and orange are holes). The chart shows execution time (in ms) for each algorithm as the point set size increases. Solid lines denotes no holes in polygon while dashed lines represents holes were inserted (as seen in the first picture).
 
 <p align="middle">
   <img src="https://raw.githubusercontent.com/JeremyBYU/concavehull-evaluation/master/assets/repo/ca_image.png" height="100%" /> 
