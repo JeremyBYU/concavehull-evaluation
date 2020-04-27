@@ -29,7 +29,7 @@ logger = logging.getLogger("Concave")
 def evaluate():
     """Evaluates conave hull implementations"""
     pass
-  
+
 
 @evaluate.command()
 @click.option('-i', '--input-file', type=click.Path(exists=True), default=DEFAULT_TEST_FILE)
@@ -41,8 +41,9 @@ def evaluate():
               help="Plot polygons")
 def polylidar(input_file, save_directory, alpha, xy_thresh, number_iter, plot):
     """Runs polylidar on input point file"""
-    run_test_polylidar(input_file, save_dir=save_directory,
-                       alpha=alpha, xyThresh=xy_thresh, n=number_iter)
+    polygons, time_ms, l2_norm = run_test_polylidar(input_file, save_dir=save_directory,
+                                                    alpha=alpha, xyThresh=xy_thresh, n=number_iter)
+    print(time_ms)
 
 
 @evaluate.command()
@@ -101,11 +102,11 @@ def all(ctx, config_file, input_file, number_iter):
 def create_records(timings, shape_name, num_points, l2_norm, alg='polylidar', section='all', has_hole=False, **kwargs):
     records = []
     # backwards compatability to previous function, if only 1 timing for this poly, integrate timing and accuracy into one record
-    if len(timings) ==1:
+    if len(timings) == 1:
         records.append(dict(alg=alg, shape=shape_name, points=num_points,
-                        l2_norm=l2_norm, time=timings[0], holes=has_hole, section=section, **kwargs))
+                            l2_norm=l2_norm, time=timings[0], holes=has_hole, section=section, **kwargs))
         return records
-    
+
     for time in timings:
         records.append(dict(alg=alg, shape=shape_name, points=num_points,
                             l2_norm=np.NaN, time=time, holes=has_hole, section=section, **kwargs))
@@ -113,7 +114,6 @@ def create_records(timings, shape_name, num_points, l2_norm, alg='polylidar', se
     if section == 'all':
         records.append(dict(alg=alg, shape=shape_name, points=num_points,
                             l2_norm=l2_norm, time=np.NaN, holes=has_hole, section=section, **kwargs))
-
 
     return records
 
@@ -127,7 +127,6 @@ def run_tests(point_fpath, config):
 
     # Global algorithm parameters
     alg_params = dict(config['alg_params'])
-
 
     # Check if there are individual alg parameters for this test params, if so then update
     if config['tests'].get(shape_name):
@@ -199,7 +198,7 @@ def polylidar_montecarlo():
     polys_holes_fpath = path.join(GENERATED_DIR, "polygons_holes.pkl")
 
     points_list = [path.join(POINTS_DIR, "polygons_2000.pkl"), path.join(POINTS_DIR, "polygons_8000.pkl"),
-                    path.join(POINTS_DIR, "polygons_holes_2000.pkl"), path.join(POINTS_DIR, "polygons_holes_8000.pkl") ]
+                   path.join(POINTS_DIR, "polygons_holes_2000.pkl"), path.join(POINTS_DIR, "polygons_holes_8000.pkl")]
     poly_list = [polys_fpath, polys_fpath, polys_holes_fpath, polys_holes_fpath]
 
     save_path = path.join(DEFAULT_RESULTS_SAVE_DIR, "polylidar_montecarlo.csv")
@@ -216,11 +215,12 @@ def polylidar_montecarlo():
     df = pd.DataFrame.from_records(all_records)
     df.to_csv(save_path, index=False)
 
+
 @evaluate.command()
 @click.option('-po', '--polylidar-only', default=False, is_flag=True, required=False, help="Only Polylidar")
 def alphabet(polylidar_only):
     """Evaluates all algorithms on an alphabet set.  Saves results in results/alphabets_results.csv"""
-    points_list = [path.join(ALPHABET_DIR, "polygons_2000.pkl") ]
+    points_list = [path.join(ALPHABET_DIR, "polygons_2000.pkl")]
     poly_list = [path.join(ALPHABET_DIR, "polygons.pkl")]
 
     fname = "alphabet_results.csv" if not polylidar_only else "alphabet_results_robust.csv"
@@ -269,6 +269,7 @@ def setup_run_cgal(poly, shape_name, has_hole, convexity, points, num_points, ru
 
     return create_records(timings, shape_name, num_points, l2_norm, 'cgal', 'all', has_hole=has_hole, convexity=convexity)
 
+
 def setup_run_spatialite(poly, shape_name, has_hole, convexity, points, num_points, run_kwargs):
     kwargs = dict(**run_kwargs)
     kwargs.update(dict(factor=3.0, gt_fpath=poly))
@@ -278,6 +279,7 @@ def setup_run_spatialite(poly, shape_name, has_hole, convexity, points, num_poin
     is_valid = concave_poly.is_valid
 
     return create_records(timings, shape_name, num_points, l2_norm, 'spatialite', 'all', has_hole=has_hole, convexity=convexity)
+
 
 def setup_run_postgis(poly, shape_name, has_hole, convexity, points, num_points, run_kwargs):
     kwargs = dict(**run_kwargs)
@@ -289,7 +291,6 @@ def setup_run_postgis(poly, shape_name, has_hole, convexity, points, num_points,
     is_valid = concave_poly.is_valid if concave_poly is not None else False
 
     return create_records(timings, shape_name, num_points, l2_norm, 'postgis', 'all', has_hole=has_hole, convexity=convexity)
-
 
 
 def run_montecarlo(points_dict_fpath, polygon_fpath, algs=['polylidar', 'cgal', 'spatialite', 'postgis'], pbar=None):
@@ -326,6 +327,7 @@ def run_montecarlo(points_dict_fpath, polygon_fpath, algs=['polylidar', 'cgal', 
 
     return records
 
+
 def run_as_config(config_file):
     with open(config_file) as f:
         config = json.load(f)
@@ -337,6 +339,8 @@ def run_as_config(config_file):
         filename for filename in filenames if filename.endswith('.csv')]
     all_records = []
     for point_file in point_files:
+        # if 'caholes_64000' not in point_file:
+        #     continue
         logger.info("Processing file %r", point_file)
         point_fpath = path.join(directory_name, point_file)
         gt_fpath = path.join(gt_dir, point_file.split('_')[0] + '.geojson')
