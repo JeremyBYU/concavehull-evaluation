@@ -152,9 +152,16 @@ However do note that CGAL actually does some work that Polylidar and all the oth
 to be rapidly constructed.  This is a really neat feature if you want to rapidly see a suite of different levels of concavity of a point cloud. However if you just want one answer for one alpha value, this is excess work.
 
 
-## Notes
+## Extras
+
 
 ### Subtimings
+
+Some individuals have shown interest in seeing the execution times of the algorithmic steps in  polylidar in comparison to the other algorithms.
+Polylidar already has the ability to extract execution timing for the substeps in its algorithm (this is used by me often to profile my algorithm and find weak spots to improve it). However I did not design this benchmark
+to extract subtiming for the other algorithms (and neither did they design the interfaces for their algorithms to do so!). This section describes how to extract these sub steps timings for polylidar, cgal, and spatialite.
+
+All examples here will gather subtimings for `caholes_64000.csv` (64,000 points of CA state shape with holes). For analysis please see `analysis/SubTimings.ipynb`.
 
 CGAL -
 
@@ -178,12 +185,16 @@ Polylidar
 
 ```
 
+Spatialite
+
+1. `python scripts/sub_timings_spatialite.py` - Please note you need a modified version of spatialite to retrieve subtimings! Please read the documentation in `sub_timings_spatialite.py` to learn how to generate it.
+
+```txt
+[[243.2134,128.8915,10360.2976],[227.9394,130.3733,10390.0784],[227.4224,134.5224,10378.9729],[224.1232,129.1779,10553.6631],[238.2201,137.2343,10890.5426],[229.3539,135.3008,10517.0301],[228.7435,130.1042,10465.4918],[231.9369,130.8360,10482.0692],[227.3919,132.8230,10459.4602],[227.2898,133.1695,10500.2744],[226.9457,131.7726,10611.0244],[237.7284,134.2110,10911.7942],[234.5558,138.6091,10921.2371],[236.4156,137.5632,10925.5706],[239.3039,138.8017,10912.7750],[230.0623,137.1160,10923.9332],[237.9716,140.4151,10932.0248],[237.7439,137.0150,10913.0082],[238.0106,135.7160,11105.2319],[240.1162,137.9742,11188.3114],[238.8588,137.1617,11084.2021],[236.3043,135.8150,10873.0050],[235.1310,135.2349,10900.7403],[234.9856,137.3502,10921.8185],[236.2775,135.5974,10916.4996],[234.9958,132.2554,10902.1786],[235.7370,136.4068,10923.0945],[238.3606,138.1947,10927.9517],[232.7049,141.2146,10924.7551],[236.9476,137.6959,10942.4811]]
+```
+
 ### Profile
 
+If you are interested in profiling polylidar (I am!) then run this. You need to have `yep` installed.
+
 1. `python -m yep -v -- ./scripts/profile_polylidar.py`
-
-
-
-
-
-
