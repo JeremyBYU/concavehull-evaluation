@@ -6,6 +6,7 @@ MAIN_DIR = join(THIS_DIR, '../')
 TEST_FIXTURES_DIR = join(MAIN_DIR, 'test_fixtures')
 GENERATED_DIR = join(TEST_FIXTURES_DIR, "generated")
 POINTS_DIR = join(TEST_FIXTURES_DIR, "points")
+REALSENSE_DIR = join(TEST_FIXTURES_DIR, "realsense")
 
 CGAL_BIN = abspath(join(MAIN_DIR, 'cpp', 'cgal', 'bin', 'cgal_alpha'))
 

@@ -370,7 +370,7 @@ def convert_to_geometry(shells, holes):
     return final_geometry
 
 
-def lines_to_polygon(list_lines, buffer_amt=0.01):
+def lines_to_polygon(list_lines, buffer_amt=0.0001):
     """Converts a list of line strings into a polygon
     Its importnat to note that this is __one__ way to convert the edges
     returned by CGAL into a polygon. This method only works for a single connected region.
