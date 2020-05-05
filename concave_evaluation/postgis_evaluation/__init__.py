@@ -100,6 +100,8 @@ def run_test(point_fpath, save_dir=DEFAULT_PG_SAVE_DIR, db_path=DEFAULT_PG_CONN,
     polygon, timings = extract_concave_hull(
         db.conn, test_name, target_percent=target_percent, n=n)
     if save_poly:
+        save_fname, _ = path.join(save_dir, save_poly + '.geojson'), None if isinstance(save_poly,
+                                                                                        str) else modified_fname(point_fpath, save_dir)
         save_shapely(polygon, save_fname, alg='postgis')
 
     l2_norm = np.NaN

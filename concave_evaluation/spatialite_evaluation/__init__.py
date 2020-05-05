@@ -87,6 +87,7 @@ def run_test(point_fpath, save_dir=DEFAULT_SL_SAVE_DIR, db_path=DEFAULT_SPATIALI
         db.conn, test_name, factor=factor, n=n)
 
     if save_poly:
+        save_fname, _ = path.join(save_dir, save_poly + '.geojson'), None if isinstance(save_poly, str) else modified_fname(point_fpath, save_dir)
         save_shapely(polygon, save_fname, alg='spatialite')
 
     l2_norm = np.NaN

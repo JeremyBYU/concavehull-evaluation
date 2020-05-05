@@ -16,8 +16,8 @@ def create_line_strings(result):
     num_lines = result.shape[0]
     all_lines = []
     for i in range(num_lines):
-        np_line = result[i,:]
-        line = LineString([(np_line[0], np_line[1]),(np_line[2], np_line[3])])
+        np_line = result[i, :]
+        line = LineString([(np_line[0], np_line[1]), (np_line[2], np_line[3])])
         all_lines.append(line)
 
     return all_lines
@@ -37,6 +37,7 @@ def launch_cgal(point_fpath, edge_fpath, alpha=10, n=1):
     except Exception:
         logger.exception("Error launching cgal with args %r", args)
     return timings
+
 
 def run_test(point_fpath, save_dir=DEFAULT_CGAL_SAVE_DIR, n=1, alpha=10, save_poly=True, gt_fpath=None, **kwargs):
     # If we already passed in a numpy array, no need to load from file
@@ -64,6 +65,8 @@ def run_test(point_fpath, save_dir=DEFAULT_CGAL_SAVE_DIR, n=1, alpha=10, save_po
     if save_poly:
         if (not union_lines_poly.is_valid):
             logger.error("CGAL polygon not valid %r", point_fpath)
+        save_fname, _ = path.join(save_dir, save_poly + '.geojson'), None if isinstance(save_poly,
+                                                                                        str) else modified_fname(point_fpath, save_dir)
         save_shapely(union_lines_poly, save_fname, alg='cgal')
 
     l2_norm = np.NaN
@@ -84,10 +87,3 @@ def run_test(point_fpath, save_dir=DEFAULT_CGAL_SAVE_DIR, n=1, alpha=10, save_po
     # plt.show()
 
     return union_lines_poly, timings, l2_norm
-
-    
-
-
-
-
-    

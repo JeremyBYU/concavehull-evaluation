@@ -21,7 +21,7 @@ from concave_evaluation.spatialite_evaluation import run_test as run_test_spatia
 from concave_evaluation.postgis_evaluation import run_test as run_test_postgis
 from concave_evaluation.helpers import load_polygon
 from concave_evaluation.helpers import measure_convexity_simple
-from concave_evaluation.scripts.realsense import run_realsense_tests
+from concave_evaluation.scripts.realsense import realsense
 
 logger = logging.getLogger("Concave")
 
@@ -30,6 +30,9 @@ logger = logging.getLogger("Concave")
 def evaluate():
     """Evaluates conave hull implementations"""
     pass
+
+
+evaluate.add_command(realsense)
 
 
 @evaluate.command()
@@ -328,10 +331,10 @@ def run_montecarlo(points_dict_fpath, polygon_fpath, algs=['polylidar', 'cgal', 
 
     return records
 
-@evaluate.command()
-def realsense():
-    """Evaluates conave hull implementations for realsense"""
-    run_realsense_tests()
+# @evaluate.command()
+# def realsense():
+#     """Evaluates conave hull implementations for realsense"""
+#     run_realsense_tests()
 
 
 def run_as_config(config_file):
