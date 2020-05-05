@@ -56,11 +56,14 @@ def extract_concave_hull(conn, test_name, n=1, factor=1.0):
 
 
 class DBConn(object):
-    def __init__(self, db_path, use_row=True):
+    def __init__(self, db_path, use_row=True, extension_path=None):
         """ Sets up Database connection and loads in the spatialite extension """
         self.conn = sqlite3.connect(db_path, check_same_thread=False)
         self.conn.enable_load_extension(True)
-        self.conn.execute('SELECT load_extension("mod_spatialite");')
+        if extension_path is None:
+            self.conn.execute('SELECT load_extension("mod_spatialite");')
+        else:
+            self.conn.execute('SELECT load_extension("{}");'.format(extension_path))
         # Initialize if this is a new database
         if db_path == ':memory:' or not path.exists(db_path):
             self.conn.execute("SELECT InitSpatialMetaData(1);")
@@ -84,6 +87,7 @@ def run_test(point_fpath, save_dir=DEFAULT_SL_SAVE_DIR, db_path=DEFAULT_SPATIALI
         db.conn, test_name, factor=factor, n=n)
 
     if save_poly:
+        save_fname, _ = path.join(save_dir, save_poly + '.geojson'), None if isinstance(save_poly, str) else modified_fname(point_fpath, save_dir)
         save_shapely(polygon, save_fname, alg='spatialite')
 
     l2_norm = np.NaN

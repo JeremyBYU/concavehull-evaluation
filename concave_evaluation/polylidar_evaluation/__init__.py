@@ -84,9 +84,10 @@ def run_test(point_fpath, save_dir=DEFAULT_PL_SAVE_DIR, n=1, alpha=0.0, xyThresh
         time_ms.append(ms)
 
     if save_poly:
-        save_fname, _ = modified_fname(point_fpath, save_dir)
+        save_fname, _ = path.join(save_dir, save_poly + '.geojson'), None if isinstance(save_poly,
+                                                                                        str) else modified_fname(point_fpath, save_dir)
         save_shapely(polygons, save_fname, alg='polylidar')
-    
+
     l2_norm = np.NaN
     # Evaluate L2 Norm if we have the ground truth data
     # if the path is a string (nominal) then load the polygon
