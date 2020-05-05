@@ -1,6 +1,6 @@
 """This module captrues subtiming for algorithmic steps inside of spatialite ST_ConcaveHull
 In order to capture these subtiming you must modify the source code of spatialite (minimal).
-Twos file must be changed which calculate the execution timings for 3 "main" steps in the concave hull algorithm.
+Two files must be changed which calculate the execution timings for 3 "main" steps in the concave hull algorithm.
 
 1. Triangulation (GEOS Delaunay triangulation)
 2. Shape Extraction (Edge length statistics and filtering triangles)

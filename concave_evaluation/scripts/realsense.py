@@ -32,7 +32,7 @@ def calc_mean_and_std(timings, l2, alg='polylidar'):
 
 @click.group()
 def realsense():
-    """Evaluates conave hull implementations on realsense data"""
+    """Evaluates concave hull implementations on realsense data"""
     pass
 
 
@@ -73,7 +73,7 @@ def get_realsense_scenes(realsense_dir):
     # Create scene dictionaries
     for subdir in paths:
         scene = dict(point_fpath=subdir / 'points.txt', gt_fpath=subdir / 'gt.geojson',
-                     color_fpath=subdir / 'color.jpg', depth_fpath=subdir / 'depth.jpg',
+                     color_fpath=subdir / 'color_nopoly.jpg', depth_fpath=subdir / 'depth.jpg',
                      depth_raw_fpath=subdir / 'depth_raw.txt', meta_fpath=subdir / 'meta.json',
                      scene_name=subdir.stem, scene_idx=int(subdir.stem.split('_')[1]) - 1,
                      scene_dir=subdir)
@@ -85,6 +85,7 @@ def get_realsense_scenes(realsense_dir):
 @realsense.command()
 @click.option('-cf', '--config-file', type=click.Path(exists=True), default=REALSENSE_CONFIG)
 def view(config_file):
+    """Visualize the 3D and 2D point from the Realsense Camera"""
     import open3d as o3d
     with open(config_file) as f:
         config = json.load(f)
@@ -103,6 +104,7 @@ def view(config_file):
 @realsense.command()
 @click.option('-cf', '--config-file', type=click.Path(exists=True), default=REALSENSE_CONFIG)
 def all(config_file):
+    """Runs all Realsense Benchmarks"""
     with open(config_file) as f:
         config = json.load(f)
     scenes = get_realsense_scenes(config['realsense_dir'])
@@ -115,6 +117,7 @@ def all(config_file):
 
     df = pd.concat(all_dfs, axis=0)
     df = df.reset_index()
+    print(df)
     df.to_csv(config['save_csv'])
 
 

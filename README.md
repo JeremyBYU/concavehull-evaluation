@@ -11,6 +11,7 @@ Two main benchmarks are provided which assess computation time and accuracy of s
 
 1. Varying size point clouds of U.S. State Shapes. See how algorithms scale with increasing number of points.
 2. Point clouds of the English Alphabet.
+3. Plane Segmented RGBD Point clouds (must be downloaded)
 
 Below is a sample of timing results on the State Shape of California (CA). Point clouds of varying size are sampled inside the CA Polygon (green is exterior hull and orange are holes). The chart shows execution time (in ms) for each algorithm as the point set size increases. Solid lines denotes no holes in polygon while dashed lines represents holes were inserted (as seen in the first picture).
 
@@ -65,7 +66,7 @@ concave evaluate --help
 
 ### Generate Data
 
-First you need to generate the data (or download it optionally) using the following script. I recommend downloading all the data from this public link here: [test_fixtures](https://drive.google.com/open?id=1ItDcc1l2I4ONbqR2NavCSLncYnYRRTW1). Download and unzip the test_fixtures folder into this repository.
+First you need to generate the data (or download it optionally) using the following script. I recommend downloading all the data from this public link here: [test_fixtures](https://drive.google.com/open?id=1ItDcc1l2I4ONbqR2NavCSLncYnYRRTW1). Download and unzip the test_fixtures folder into this repository. Realsense data can be downloaded here and must be extracted into test_fixtures: [realsense](https://drive.google.com/open?id=1x60jidIChes0CQNn7_9M2-AfulPIg3PP)
 
 #### Scale and normalize a projected polygon
 
@@ -89,19 +90,18 @@ concave holes -i test_fixtures/gt_shapes/ca.geojson -o test_fixtures/gt_shapes/c
 ```bash
 concave points --help
 # Example
-concave points -i test_fixtures/gt_shapes/ca.geojson -o test_fixtures/gt_shapes/caholes.geojson
+concave points -i test_fixtures/gt_shapes/ca.geojson
 ```
-
-1. Generate points for a shape - `concave `
 
 ### Run Benchmarks
 
 You can run ``concave evaluate --help`` to view available commands:
 
 ```
+(concave) ➜  concavehull-evaluation git:(subalgorithm_timings) ✗ concave evaluate --help        
 Usage: concave evaluate [OPTIONS] COMMAND [ARGS]...
 
-  Evaluates concave hull implementations
+  Evaluates conave hull implementations
 
 Options:
   --help  Show this message and exit.  [default: False]
@@ -113,7 +113,9 @@ Commands:
   polylidar             Runs polylidar on input point file
   polylidar-montecarlo  Runs montecarlo sims on polylidar.
   postgis               Runs postgis on input point file
+  realsense             Evaluates concave hull implementations on realsense...
   spatialite            Runs spatialite on input point file
+
 ```
 
 1. State benchmarks - `concave evaluate all -cf test_fixtures/config.json`. This will take a while.
@@ -159,7 +161,7 @@ to be rapidly constructed.  This is a really neat feature if you want to rapidly
 
 Some individuals have shown interest in seeing the execution times of the algorithmic steps in  polylidar in comparison to the other algorithms.
 Polylidar already has the ability to extract execution timing for the substeps in its algorithm (this is used by me often to profile my algorithm and find weak spots to improve it). However I did not design this benchmark
-to extract subtiming for the other algorithms (and neither did they design the interfaces for their algorithms to do so!). This section describes how to extract these sub steps timings for polylidar, cgal, and spatialite.
+to extract subtimings for the other algorithms (and neither did they design the interfaces for their algorithms to do so!). This section describes how to extract these sub steps timings for polylidar, cgal, and spatialite.
 
 All examples here will gather subtimings for `caholes_64000.csv` (64,000 points of CA state shape with holes). For analysis please see `analysis/SubTimings.ipynb`.
 
