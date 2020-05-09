@@ -208,12 +208,12 @@ def plot_arrow(ax, ob, color=GRAY, scale_factor=1.0, offset=0.00, offset_side='r
         v1_ = v1 / np.linalg.norm(v1)
         deg = get360Angle(v0_, v1_)
         deg_rot = deg
-        # print("Degree: ", deg)
+        # print("Index: {}; Degree: {}".format(index, deg))
         offset_ = offset * 2
         x_shift = 0
         y_shift = 0
         if deg > 0 and deg < 90:
-            offset_ = offset * 10
+            offset_ = offset * 4
         elif deg >= 90 and deg < 180:
             deg_rot = deg - 180
             offset_ = offset * 6
@@ -229,12 +229,17 @@ def plot_arrow(ax, ob, color=GRAY, scale_factor=1.0, offset=0.00, offset_side='r
         if deg == 180 or deg == 0:
             x_shift = -0.25
         elif deg == 90 or deg == 270:
-            y_shift = 0.1
+            y_shift = -0.20
             x_shift = -0.05
-        elif deg > 90 and deg <= 315:
+        elif deg > 90 and deg < 315:
             x_shift = -.1
-            y_shift = +.1
+            y_shift = -.2
+        elif deg > 42 and deg <= 45 or (deg == 315.0):
+            x_shift = -0.2
+            y_shift = -0.2
         # print(ls_.centroid)
+
+        # print("Index; {}; DegRot: {}; x_shift: {}; y_shift: {}".format(index, deg_rot, x_shift, y_shift))
   
         # print("Offset: " , offset_)
         ls_ = ls_.parallel_offset(offset_, 'left')
