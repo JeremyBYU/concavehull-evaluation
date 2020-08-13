@@ -21,6 +21,7 @@ solns
 *.exp
 *.lib
 *.obj
+*.npy
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
